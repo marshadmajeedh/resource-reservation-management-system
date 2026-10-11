@@ -1,0 +1,81 @@
+// Prisma schema file for Resource Reservation Management System
+// Compatible with Prisma 7 and PostgreSQL
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+}
+
+enum ReservationStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+model User {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  role         UserRole  @default(STAFF)
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Distinct named relations
+  reservations          Reservation[] @relation("UserReservations")
+  cancelledReservations Reservation[] @relation("CancelledReservations")
+
+  @@map("users")
+}
+
+model ResourceCategory {
+  id        String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String     @unique
+  resources Resource[]
+
+  @@map("resource_categories")
+}
+
+model Resource {
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  categoryId  String           @map("category_id") @db.Uuid
+  name        String
+  description String?
+  location    String
+  capacity    Int?
+  isActive    Boolean          @default(true) @map("is_active")
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  category     ResourceCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  reservations Reservation[]
+
+  @@map("resources")
+}
+
+model Reservation {
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId             String            @map("user_id") @db.Uuid
+  resourceId         String            @map("resource_id") @db.Uuid
+  purpose            String
+  startAt            DateTime          @map("start_at") @db.Timestamptz(6)
+  endAt              DateTime          @map("end_at") @db.Timestamptz(6)
+  status             ReservationStatus @default(CONFIRMED)
+  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  cancelledAt        DateTime?         @map("cancelled_at") @db.Timestamptz(6)
+  cancelledById      String?           @map("cancelled_by_id") @db.Uuid
+  cancellationReason String?           @map("cancellation_reason")
+
+  user        User     @relation("UserReservations", fields: [userId], references: [id], onDelete: Restrict)
+  resource    Resource @relation(fields: [resourceId], references: [id], onDelete: Restrict)
+  cancelledBy User?    @relation("CancelledReservations", fields: [cancelledById], references: [id], onDelete: Restrict)
+
+  @@map("reservations")
+}
