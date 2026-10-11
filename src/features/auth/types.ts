@@ -57,8 +57,37 @@ export interface CreateStaffInput {
 }
 
 /**
+ * Internal database user record (includes passwordHash for auth verification only).
+ */
+export interface UserDbRecord {
+  id: string;
+  name: string;
+  email: string;
+  passwordHash: string;
+  role: "ADMIN" | "STAFF";
+  isActive: boolean;
+  createdAt: Date | string;
+}
+
+/**
+ * Result of credential authentication attempt.
+ */
+export type AuthResult =
+  | {
+      success: true;
+      user: SafeUser;
+      token: string;
+    }
+  | {
+      success: false;
+      error: string;
+      retryAfterSeconds?: number;
+    };
+
+/**
  * Helper to normalize email addresses according to the documented system-wide policy.
  */
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
+

@@ -15,54 +15,7 @@ A technical assessment project implementing an internal office Resource Reservat
 ---
 
 ## Entity Relationship (ER) Diagram
-
-```mermaid
-erDiagram
-    users {
-        uuid id PK "gen_random_uuid()"
-        text name "Required"
-        text email "Required, Unique, Lowercase"
-        text password_hash "Required, Internal only"
-        UserRole role "ADMIN | STAFF, default STAFF"
-        boolean is_active "Default true"
-        timestamptz created_at "Default CURRENT_TIMESTAMP"
-    }
-
-    resource_categories {
-        uuid id PK "gen_random_uuid()"
-        text name "Required, Unique"
-    }
-
-    resources {
-        uuid id PK "gen_random_uuid()"
-        uuid category_id FK "References resource_categories(id) ON DELETE RESTRICT"
-        text name "Required"
-        text description "Optional"
-        text location "Required"
-        integer capacity "Optional, CHECK > 0"
-        boolean is_active "Default true"
-        timestamptz created_at "Default CURRENT_TIMESTAMP"
-    }
-
-    reservations {
-        uuid id PK "gen_random_uuid()"
-        uuid user_id FK "References users(id) ON DELETE RESTRICT (Owner)"
-        uuid resource_id FK "References resources(id) ON DELETE RESTRICT"
-        text purpose "Required"
-        timestamptz start_at "Required"
-        timestamptz end_at "Required, CHECK end_at > start_at"
-        ReservationStatus status "CONFIRMED | CANCELLED, default CONFIRMED"
-        timestamptz created_at "Default CURRENT_TIMESTAMP"
-        timestamptz cancelled_at "Optional, Required if CANCELLED"
-        uuid cancelled_by_id FK "References users(id) ON DELETE RESTRICT"
-        text cancellation_reason "Optional"
-    }
-
-    resource_categories ||--o{ resources : "has"
-    users ||--o{ reservations : "owns (userId)"
-    users ||--o{ reservations : "cancels (cancelledById)"
-    resources ||--o{ reservations : "booked in"
-```
+![alt text](internTechnicalAssesmentERD.drawio.png)
 
 ### Key Architectural Decisions
 
@@ -177,34 +130,109 @@ npm run prisma:migrate
 
 *Note: In Prisma 7, connection URLs are managed in `prisma.config.ts`, and driver adapters (`@prisma/adapter-pg`) are used. Explicit local environment files are loaded automatically.*
 
-### 4. Running Isolated Database Tests
+### 4. Running Automated Tests
 
-Database constraint tests execute against an isolated disposable PostgreSQL test instance (never the hosted database):
+Tests execute against an isolated disposable PostgreSQL test instance (never the hosted database):
 
 ```bash
 # Start an isolated local disposable Postgres instance via Docker (if not already running):
 docker run -d --name rrs_test_db -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=rrs_test -p 5433:5432 postgres:16-alpine
 
-# Run the automated database constraint test suite:
+# Run all automated tests (database constraints and authentication):
 npm test
+
+# Or run specific test suites:
+npm run test:db    # Database constraint & concurrency test suite
+npm run test:auth  # Authentication, JWT, and authorization test suite
 ```
 
-The test suite validates:
-- Rejection of overlapping confirmed bookings on the same resource (`23P01`).
-- Success of back-to-back bookings with `[)` boundaries.
-- Success of concurrent bookings on different resources.
-- Immediate release of reserved time slots upon cancellation.
-- Rejection of invalid time ranges, zero-capacities, and invalid cancellation metadata (`23514`).
-- Rejection of invalid foreign keys and cascade deletions (`23503`).
-- Coordinated competing concurrent transactions through independent connections.
+The test suites validate:
+- **Database Constraints**: Overlap prevention via PostgreSQL GiST exclusion constraints (`23P01`), back-to-back booking intervals `[)`, cancellation status transitions, foreign key preservation, and isolated concurrent insert races.
+- **Authentication**: Argon2id password hashing and verification, timing equalization for unknown/inactive accounts, JWT signing/expiry/tamper resistance, real-time database role and deactivation verification, HttpOnly cookie configurations, CSRF origin checks, open redirect sanitization, and in-memory rate limiting.
 
-### 5. Local Development Server
+### 5. Initial Administrator Setup CLI
+
+An initial administrator account can be created explicitly using our secure CLI command.
+
+```bash
+npm run create-admin
+```
+
+**Security Design**:
+- **Hidden Input**: You will be prompted interactively for Administrator Name, Email, and Password. Passwords are masked with `*` and hidden from the terminal.
+- **No Command-Line Arguments**: Passing `--password` via `process.argv` is strictly prohibited and rejected to prevent credentials leaking into process listings (`ps`, Task Manager) and shell history.
+- **Environment Variable Fallback**: In automated environments, credentials can be set via `ADMIN_NAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` environment variables.
+- **Zero Insecure Defaults**: The system never hardcodes a default password.
+- **Non-Destructive Guarantee**: If an account with the specified email already exists, the command strictly refuses to overwrite it, reset its password, or silently promote it.
+
+### 6. Local Development Server
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the application.
+Open [http://localhost:3000](http://localhost:3000) to view the application:
+- `/login`: Clean white-and-green sign-in interface with accessible validation and password visibility toggle.
+- `/workspace`: Protected workspace displaying user credentials, role badge (`Admin` or `Staff`), and secure sign-out.
+- `/workspace/admin`: Protected administrator console exercising server-side `requireAdmin()` access control.
+
+---
+
+## Authentication & Authorization Architecture
+
+### Flow Overview (Beginner-Friendly Explanation)
+
+1. **User Sign-In**:
+   - The user enters their email and password on `/login`.
+   - The server normalizes the email (trims whitespace and converts to lowercase).
+   - Passwords are **never** trimmed, lowercased, or altered, preserving exact characters and byte representations.
+   - The server validates input sizes (email ≤ 255 chars, password 8–128 chars).
+
+2. **Credential Verification & Timing Disparity Reduction**:
+   - The server queries PostgreSQL for the user by normalized email.
+   - **If the user does not exist or is inactive**: The server executes a dummy Argon2id verification against a pre-computed hash. This reduces obvious timing differences compared to immediate rejection; however, it does **not guarantee constant-time login** due to database query latency and system variations.
+   - **If the user exists**: The server verifies the candidate password against the stored Argon2id hash.
+   - **Generic Failure Messages**: Unknown email, wrong password, and inactive accounts return the identical message: `"Invalid email or password."`.
+
+3. **Stateless JWT Session in HttpOnly Cookie**:
+   - On successful authentication, the server signs a JSON Web Token (JWT) using `jose` with the `HS256` algorithm.
+   - **Minimal Payload**: The JWT payload contains only the user ID as subject (`sub`). It contains no passwords, no confidential data, and no roles.
+   - The JWT is transmitted in a secure cookie named `rrs_session`:
+     - `HttpOnly`: Prevents client-side scripts from reading or copying the cookie directly. (Note: HttpOnly does not eliminate XSS vulnerabilities or prevent malicious injected scripts from issuing authenticated requests on the user's behalf).
+     - `Secure`: Transmitted only over HTTPS in production.
+     - `SameSite=Lax`: Prevents cross-site request forgery while permitting top-level navigation.
+     - `Path=/`: Active across the entire domain.
+     - `Max-Age=28800`: 8-hour session lifetime matching token expiration.
+
+4. **Real-Time Server-Side Authorization (`dal.ts`)**:
+   - On every protected request (`/workspace`, `/workspace/admin`, or authenticated APIs):
+     - `getCurrentUser()` validates the JWT signature, expiry, issuer, and audience.
+     - The server then queries the database for the user record using the verified user ID.
+     - **Real-Time Role & Active Status**: If an admin changes a staff member's role or deactivates an account in the database, the change takes effect immediately on their very next request! Stale token roles are never trusted.
+     - `requireUser()` redirects unauthenticated or inactive users to `/login`.
+     - `requireAdmin()` ensures the active user has `role = 'ADMIN'`, redirecting staff members to `/workspace`.
+
+5. **Generating a Strong Local JWT Secret**:
+   To generate a secure 32+ character random secret for local development, run:
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
+   ```
+   Copy the output and assign it to `JWT_SECRET` in your `.env` file. The application refuses to start if `JWT_SECRET` is missing, shorter than 32 characters, or set to a known placeholder.
+
+---
+
+## Architectural Limitations & Honest Disclosures
+
+### 1. In-Memory Login Rate Limiter
+- **Single-Instance Scope**: The rate limiter tracks failed login attempts in application memory.
+- **Restart Reset**: When the Node.js application process restarts, in-memory attempt counts reset to zero.
+- **Horizontal Scaling**: In a multi-node cluster, in-memory rate limits are not shared between instances (a shared store such as Redis would be required in multi-node deployments).
+- **Forwarding Header Policy**: Arbitrary client-supplied forwarding headers (`X-Forwarded-For`) are never trusted as client identity because they are trivially spoofed. The limiter keys attempts by normalized account email to prevent brute-force attacks on user accounts regardless of IP manipulation.
+- **Legitimate User Lockout Risk**: Because rate limiting is keyed on normalized account email to effectively thwart credential-stuffing without relying on untrusted/spoofable client IP headers, a malicious actor deliberately submitting 5 invalid password guesses for a specific target email will trigger the 15-minute block. During this lockout window, the legitimate account owner will also be temporarily prevented from logging in until the lockout duration expires.
+
+### 2. Stateless JWT Logout Limitation
+- **Cookie Clearing**: Logging out clears the `rrs_session` HttpOnly cookie from the browser with `Max-Age=0`.
+- **Token Validity Limitation**: Because this system uses stateless JWTs without a distributed revocation table or token blacklist, a previously copied or intercepted JWT remains cryptographically valid until its 8-hour expiry. Deactivating the user account in the database, however, revokes access immediately on all subsequent requests because the server validates active status on every request.
 
 ---
 
@@ -213,16 +241,14 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 | Command | Description |
 | :--- | :--- |
 | `npm run dev` | Runs the Next.js development server with Turbopack |
-| `npm run build` | Builds the production application (does not require live DB) |
+| `npm run build` | Builds the production application (independent of live database) |
 | `npm run start` | Starts the production server |
-| `npm run lint` | Runs ESLint style checks |
+| `npm run lint` | Runs ESLint style and quality checks |
 | `npm run typecheck` | Validates TypeScript types across the codebase |
-| `npm test` | Runs isolated database constraint and concurrency tests |
+| `npm test` | Runs the complete automated test suite (database constraints & auth) |
+| `npm run test:db` | Runs isolated database constraint and concurrency tests |
+| `npm run test:auth` | Runs isolated authentication, JWT, and authorization tests |
+| `npm run create-admin` | CLI command to safely create the initial administrator |
 | `npm run prisma:generate` | Generates the Prisma 7 client |
 | `npm run prisma:migrate` | Deploys versioned migrations (`prisma migrate deploy`) |
 
----
-
-## Seeding Notice
-
-> **Note**: Automatic demo-user seeding is intentionally deferred. Secure account seeding with properly hashed credentials will be introduced alongside the authentication module.

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 selection:bg-indigo-500 selection:text-white">
@@ -5,26 +7,33 @@ export default function HomePage() {
       <header className="border-b border-slate-200/80 bg-white/80 backdrop-blur-md sticky top-0 z-50 dark:border-slate-800/80 dark:bg-slate-950/80">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center shadow-md shadow-indigo-500/20 text-white font-bold text-lg">
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-400 flex items-center justify-center shadow-md shadow-emerald-500/20 text-white font-bold text-lg">
               R
             </div>
             <div>
               <span className="font-bold tracking-tight text-slate-900 dark:text-white">
-                ResourceHub
+                Reserve
               </span>
               <span className="hidden sm:inline-block ml-2 text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                Assessment System
+                Resource System
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span
-              id="status-badge"
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+          <div className="flex items-center gap-3">
+            <Link
+              id="header-login-link"
+              href="/login"
+              className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors"
             >
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              Foundation Initialized
-            </span>
+              Sign In
+            </Link>
+            <Link
+              id="header-workspace-link"
+              href="/workspace"
+              className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 shadow-sm shadow-emerald-600/20 transition-all"
+            >
+              Workspace
+            </Link>
           </div>
         </div>
       </header>
