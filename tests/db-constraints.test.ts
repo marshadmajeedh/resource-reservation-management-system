@@ -426,10 +426,17 @@ describe("Database Constraints & Overlap Prevention", () => {
       // Connection 2 begins transaction and attempts overlapping insert (9:30 - 10:30)
       // This query will BLOCK at the database level waiting for Connection 1's lock
       await conn2.query("BEGIN;");
-      const conn2Promise = conn2.query(`
-        INSERT INTO reservations (user_id, resource_id, purpose, start_at, end_at, status)
-        VALUES ('${testUserId}', '${resource1Id}', 'Conn 2 Conflicting', '2026-11-05 09:30:00+00', '2026-11-05 10:30:00+00', 'CONFIRMED');
-      `);
+      const conn2Promise = assert.rejects(
+        conn2.query(`
+          INSERT INTO reservations (user_id, resource_id, purpose, start_at, end_at, status)
+          VALUES ('${testUserId}', '${resource1Id}', 'Conn 2 Conflicting', '2026-11-05 09:30:00+00', '2026-11-05 10:30:00+00', 'CONFIRMED');
+        `),
+        (err: unknown) => {
+          const dbErr = err as DatabaseError;
+          assert.equal(dbErr.code, "23P01", "Connection 2 must fail with exclusion violation");
+          return true;
+        }
+      );
 
       // Give Connection 2 time to reach the database and enter the lock wait state
       await new Promise((resolve) => setTimeout(resolve, 80));
@@ -439,14 +446,7 @@ describe("Database Constraints & Overlap Prevention", () => {
       await conn1.query("COMMIT;");
 
       // Verify Connection 2 fails with exclusion violation (23P01)
-      await assert.rejects(
-        conn2Promise,
-        (err: unknown) => {
-          const dbErr = err as DatabaseError;
-          assert.equal(dbErr.code, "23P01", "Connection 2 must fail with exclusion violation");
-          return true;
-        }
-      );
+      await conn2Promise;
 
       await conn2.query("ROLLBACK;");
 
