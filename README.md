@@ -236,6 +236,49 @@ Open [http://localhost:3000](http://localhost:3000) to view the application:
 
 ---
 
+## Resource & Category Management Architecture
+
+### 1. Permissions & Access Control
+- **Staff (Authenticated Active Users)**:
+  - May browse active resources via `/workspace/resources`.
+  - May view individual resource specifications via `/workspace/resources/[id]`.
+  - Queries are strictly enforced on the server (`isActive: true`). Inactive resources return `404 Not Found` for staff requests.
+- **Administrators (`ADMIN`)**:
+  - Full management of categories (`/workspace/admin/categories`): creating and renaming categories.
+  - Full management of resources (`/workspace/admin/resources`): creating, editing, and activating/deactivating resources.
+  - Can view inactive resources in management consoles and detail views.
+  - Server actions strictly verify CSRF mutation origin (`validateMutationOrigin`) and real-time database user role (`requireAdmin()`). Browser role parameters or client flags are never trusted.
+
+### 2. Category & Resource Validation Rules
+- **Resource Categories**:
+  - `name`: Required, trimmed, 1–100 characters. Blank or whitespace-only inputs are rejected.
+  - Uniqueness: Handled cleanly via database constraint violation (`P2002`). Returns friendly error message (`"A category with this name already exists."`).
+  - No deletion: Category deletion is omitted in this scope to preserve referential integrity with resources.
+  - Form integration: Resource forms dynamically fetch categories from the database; hardcoded categories are prohibited. If no categories exist, administrators are prompted to create a category first.
+- **Resources**:
+  - `name`: Required, trimmed, 1–100 characters. Blank inputs rejected.
+  - `categoryId`: Required valid UUID referencing an existing category record.
+  - `location`: Required, trimmed, 1–150 characters.
+  - `capacity`: Optional positive integer (1–100,000). Fractional, negative, zero, non-numeric, or unsafe integers are rejected. Empty inputs are saved as `null` (never zero).
+  - `description`: Optional text, trimmed, up to 2,000 characters. Empty inputs saved as `null`.
+  - Identity Preservation: Editing a resource preserves its unique ID, `created_at` timestamp, and all existing reservation relationships.
+
+### 3. Deactivation Policy & Row-Locking Concurrency Design
+- **Explicit State Transitions**:
+  - Activation and deactivation use explicit desired boolean states (`isActive: false` / `isActive: true`), preventing unpredictability from blind toggling.
+  - Deactivation requires explicit user confirmation in the interface.
+- **Reservation Conflict Protection**:
+  - Deactivation is **strictly refused** if any `CONFIRMED` reservation exists with `end_at > NOW()` (including ongoing and upcoming bookings).
+  - A descriptive message is returned detailing the conflict and earliest reservation date; bookings are never silently cancelled.
+  - Past confirmed reservations (`end_at <= NOW()`) and cancelled reservations (`status = 'CANCELLED'`) do not prevent deactivation.
+  - Reactivation preserves full reservation history. Repeated state-setting requests are safe and idempotent.
+- **CRITICAL Concurrency Mandate for Future Booking Creation**:
+  - Deactivation executes within an interactive PostgreSQL transaction holding an exclusive row lock (`SELECT id, is_active FROM resources WHERE id = $1::uuid FOR UPDATE`).
+  - **Shared Lock Requirement**: The future reservation creation transaction **MUST take the exact same row lock** (`SELECT ... FROM resources WHERE id = $1 FOR UPDATE`) before re-checking `is_active` and inserting a new reservation.
+  - Without this symmetric row lock on the booking side, a concurrent booking could slip in between the deactivation reservation check and status update. Simply wrapping operations in a transaction does not eliminate this race; row-level locking guarantees mutual exclusion.
+
+---
+
 ## Available Scripts
 
 | Command | Description |
@@ -245,10 +288,12 @@ Open [http://localhost:3000](http://localhost:3000) to view the application:
 | `npm run start` | Starts the production server |
 | `npm run lint` | Runs ESLint style and quality checks |
 | `npm run typecheck` | Validates TypeScript types across the codebase |
-| `npm test` | Runs the complete automated test suite (database constraints & auth) |
+| `npm test` | Runs the complete automated test suite (db constraints, auth, and resources) |
 | `npm run test:db` | Runs isolated database constraint and concurrency tests |
 | `npm run test:auth` | Runs isolated authentication, JWT, and authorization tests |
+| `npm run test:resources` | Runs isolated resource and category management tests |
 | `npm run create-admin` | CLI command to safely create the initial administrator |
 | `npm run prisma:generate` | Generates the Prisma 7 client |
 | `npm run prisma:migrate` | Deploys versioned migrations (`prisma migrate deploy`) |
+
 
