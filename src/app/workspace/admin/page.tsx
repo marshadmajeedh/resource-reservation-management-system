@@ -5,7 +5,7 @@ import { WorkspaceNav } from "@/components/workspace-nav";
 export const instant = false;
 
 export const metadata = {
-  title: "Admin Console - Reserve Resource Management",
+  title: "Admin Console - Reserve",
   description: "Administrative console for managing office resources and staff permissions.",
 };
 

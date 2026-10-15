@@ -12,7 +12,7 @@ import { ResourceForm } from "../../resource-form";
 export const instant = false;
 
 export const metadata = {
-  title: "Edit Resource - Reserve Resource Management",
+  title: "Edit Resource - Reserve",
   description: "Modify existing office resource properties, location, or capacity.",
 };
 

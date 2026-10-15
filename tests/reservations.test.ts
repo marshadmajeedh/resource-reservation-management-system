@@ -415,7 +415,34 @@ describe("Reservation Lifecycle & Concurrency (Production Paths)", () => {
       staffUserA
     );
     assert.equal(blankPurposeResult.success, false);
-    assert.match(blankPurposeResult.error || "", /Purpose cannot be blank/i);
+    assert.match(blankPurposeResult.fieldErrors?.purpose || blankPurposeResult.error || "", /Purpose cannot be blank/i);
+
+    // Empty purpose
+    const emptyPurposeResult = await createReservation(
+      {
+        resourceId: activeResourceId1,
+        purpose: "",
+        startAtRaw: "2026-11-12T15:00",
+        endAtRaw: "2026-11-12T16:00",
+      },
+      staffUserA
+    );
+    assert.equal(emptyPurposeResult.success, false);
+    assert.match(emptyPurposeResult.fieldErrors?.purpose || emptyPurposeResult.error || "", /Purpose cannot be blank/i);
+
+    // Empty and blank start/end timestamps
+    const emptyTimeResult = await createReservation(
+      {
+        resourceId: activeResourceId1,
+        purpose: "Valid Purpose",
+        startAtRaw: "",
+        endAtRaw: "   ",
+      },
+      staffUserA
+    );
+    assert.equal(emptyTimeResult.success, false);
+    assert.match(emptyTimeResult.fieldErrors?.startAt || "", /Date and time are required/i);
+    assert.match(emptyTimeResult.fieldErrors?.endAt || "", /Date and time are required/i);
   });
 
   it("5. Inactive and nonexistent resources cannot be booked", async () => {

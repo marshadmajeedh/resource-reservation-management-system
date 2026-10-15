@@ -11,7 +11,7 @@ import type { ReservationStatusFilter } from "@/features/reservations/types";
 export const instant = false;
 
 export const metadata = {
-  title: "All Reservations - Admin Console - Reserve",
+  title: "All Reservations - Reserve",
   description: "Comprehensive administrator oversight of all organizational resource reservations.",
 };
 

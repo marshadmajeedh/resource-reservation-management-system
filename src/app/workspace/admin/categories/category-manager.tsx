@@ -12,12 +12,22 @@ interface CategoryManagerProps {
 }
 
 export function CategoryManager({ initialCategories }: CategoryManagerProps) {
+  const [createName, setCreateName] = useState("");
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+
   const [createState, createAction, isCreating] = useActionState<
     ResourceActionResult,
     FormData
-  >(createCategoryAction, { success: false });
-
-  const [renamingId, setRenamingId] = useState<string | null>(null);
+  >(async (prev, formData) => {
+    setSuccessMessage(null);
+    const res = await createCategoryAction(prev, formData);
+    if (res.success) {
+      setCreateName("");
+      setSuccessMessage("Category created successfully!");
+    }
+    return res;
+  }, { success: false });
 
   return (
     <div className="space-y-8">
@@ -31,7 +41,7 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
         </p>
 
         <form action={createAction} className="mt-6 space-y-4 max-w-xl">
-          {createState?.error && (
+          {createState?.error && !createState?.fieldErrors?.name && (
             <div
               role="alert"
               id="category-create-error"
@@ -55,12 +65,13 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
             </div>
           )}
 
-          {createState?.success && (
+          {successMessage && (
             <div
               role="status"
+              id="category-success-message"
               className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900/80 text-emerald-700 dark:text-emerald-300 text-sm flex items-center gap-2"
             >
-              <span className="font-semibold">Category created successfully!</span>
+              <span className="font-semibold">{successMessage}</span>
             </div>
           )}
 
@@ -69,7 +80,7 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
               htmlFor="category-name-input"
               className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5"
             >
-              Category Name
+              Category Name <span className="text-red-500">*</span>
             </label>
             <div className="flex gap-3">
               <input
@@ -79,7 +90,18 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
                 maxLength={100}
                 placeholder="e.g. Conference Rooms, Hot Desks, Hardware"
                 required
-                className="flex-1 px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-slate-900 dark:text-slate-100"
+                value={createName}
+                onChange={(e) => {
+                  setCreateName(e.target.value);
+                  if (successMessage) setSuccessMessage(null);
+                }}
+                aria-invalid={Boolean(createState?.fieldErrors?.name)}
+                aria-describedby={createState?.fieldErrors?.name ? "category-name-error" : undefined}
+                className={`flex-1 px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-950 border transition-all text-slate-900 dark:text-slate-100 ${
+                  createState?.fieldErrors?.name
+                    ? "border-red-300 dark:border-red-800 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                    : "border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                }`}
               />
               <button
                 type="submit"
@@ -90,6 +112,11 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
                 {isCreating ? "Creating..." : "Add Category"}
               </button>
             </div>
+            {createState?.fieldErrors?.name && (
+              <p id="category-name-error" className="mt-1.5 text-xs text-red-500 font-medium">
+                {createState.fieldErrors.name}
+              </p>
+            )}
           </div>
         </form>
       </section>
@@ -120,9 +147,15 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
                 key={cat.id}
                 category={cat}
                 isRenaming={renamingId === cat.id}
-                onStartRename={() => setRenamingId(cat.id)}
+                onStartRename={() => {
+                  if (successMessage) setSuccessMessage(null);
+                  setRenamingId(cat.id);
+                }}
                 onCancelRename={() => setRenamingId(null)}
-                onRenameSuccess={() => setRenamingId(null)}
+                onRenameSuccess={(newName) => {
+                  setRenamingId(null);
+                  setSuccessMessage(`Category "${newName}" renamed successfully!`);
+                }}
               />
             ))}
           </div>
@@ -143,56 +176,18 @@ function CategoryRow({
   isRenaming: boolean;
   onStartRename: () => void;
   onCancelRename: () => void;
-  onRenameSuccess: () => void;
+  onRenameSuccess: (newName: string) => void;
 }) {
-  const [renameState, renameAction, isSubmitting] = useActionState<
-    ResourceActionResult,
-    FormData
-  >(async (prev, formData) => {
-    const res = await renameCategoryAction(prev, formData);
-    if (res.success) {
-      onRenameSuccess();
-    }
-    return res;
-  }, { success: false });
-
   const resourceCount = category._count?.resources ?? 0;
 
   return (
     <div className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       {isRenaming ? (
-        <form action={renameAction} className="flex-1 space-y-2">
-          <input type="hidden" name="id" value={category.id} />
-          {renameState?.error && (
-            <p className="text-xs text-red-600 dark:text-red-400 font-medium">
-              {renameState.error}
-            </p>
-          )}
-          <div className="flex items-center gap-2">
-            <input
-              name="name"
-              defaultValue={category.name}
-              maxLength={100}
-              required
-              autoFocus
-              className="flex-1 max-w-sm px-3 py-1.5 rounded-lg text-sm bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-            />
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50"
-            >
-              {isSubmitting ? "Saving..." : "Save"}
-            </button>
-            <button
-              type="button"
-              onClick={onCancelRename}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
+        <CategoryRenameForm
+          category={category}
+          onCancel={onCancelRename}
+          onSuccess={onRenameSuccess}
+        />
       ) : (
         <div className="flex items-center gap-3">
           <span className="font-semibold text-sm text-slate-900 dark:text-white">
@@ -217,5 +212,77 @@ function CategoryRow({
         </div>
       )}
     </div>
+  );
+}
+
+function CategoryRenameForm({
+  category,
+  onCancel,
+  onSuccess,
+}: {
+  category: ResourceCategory;
+  onCancel: () => void;
+  onSuccess: (newName: string) => void;
+}) {
+  const [name, setName] = useState(category.name);
+
+  const [renameState, renameAction, isSubmitting] = useActionState<
+    ResourceActionResult,
+    FormData
+  >(async (prev, formData) => {
+    const res = await renameCategoryAction(prev, formData);
+    if (res.success) {
+      const newName = (formData.get("name") as string) || category.name;
+      onSuccess(newName);
+    }
+    return res;
+  }, { success: false });
+
+  return (
+    <form action={renameAction} className="flex-1 space-y-2">
+      <input type="hidden" name="id" value={category.id} />
+      {renameState?.error && !renameState?.fieldErrors?.name && (
+        <p className="text-xs text-red-600 dark:text-red-400 font-medium">
+          {renameState.error}
+        </p>
+      )}
+      <div className="flex items-center gap-2">
+        <input
+          name="name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          maxLength={100}
+          required
+          autoFocus
+          aria-label="Category Name *"
+          aria-invalid={Boolean(renameState?.fieldErrors?.name)}
+          aria-describedby={renameState?.fieldErrors?.name ? `rename-error-${category.id}` : undefined}
+          className={`flex-1 max-w-sm px-3 py-1.5 rounded-lg text-sm bg-slate-50 dark:bg-slate-950 border transition-all text-slate-900 dark:text-slate-100 ${
+            renameState?.fieldErrors?.name
+              ? "border-red-300 dark:border-red-800 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+              : "border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+          }`}
+        />
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 cursor-pointer"
+        >
+          {isSubmitting ? "Saving..." : "Save"}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+        >
+          Cancel
+        </button>
+      </div>
+      {renameState?.fieldErrors?.name && (
+        <p id={`rename-error-${category.id}`} className="text-xs text-red-600 dark:text-red-400 font-medium">
+          {renameState.fieldErrors.name}
+        </p>
+      )}
+    </form>
   );
 }

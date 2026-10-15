@@ -8,8 +8,8 @@ import { OFFICE_TIMEZONE_LABEL } from "@/lib/timezone";
 export const instant = false;
 
 export const metadata = {
-  title: "Browse Resources - Reserve Resource Management",
-  description: "Explore, check live availability, and reserve active office facilities, rooms, and equipment.",
+  title: "Browse Resources - Reserve",
+  description: "Find shared office resources, check live availability, and reserve facilities across locations.",
 };
 
 interface ResourcesPageProps {
@@ -73,17 +73,17 @@ export default async function ResourcesPage({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-              Available Office Resources
+              Browse Resources
             </h1>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-              Browse active facilities, check time-slot availability, and reserve spaces across company locations.
+              Find shared office spaces and equipment, check live availability, and reserve a time.
             </p>
           </div>
           <Link
             href="/workspace/reservations"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs transition-all self-start sm:self-auto cursor-pointer"
           >
-            <span>My Reservations</span>
+            <span>My Bookings</span>
             <span>→</span>
           </Link>
         </div>
@@ -94,29 +94,34 @@ export default async function ResourcesPage({
             <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
               {/* Search text */}
               <div className="md:col-span-5">
-                <label htmlFor="search-input" className="block text-xs font-semibold text-slate-500 mb-1">
+                <label htmlFor="search-input" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Search by keyword or location
                 </label>
-                <input
-                  id="search-input"
-                  type="text"
-                  name="q"
-                  defaultValue={searchQuery}
-                  placeholder="e.g. Conference Room A, Floor 3..."
-                  className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                />
+                <div className="relative">
+                  <input
+                    id="search-input"
+                    type="text"
+                    name="q"
+                    defaultValue={searchQuery}
+                    placeholder="e.g. Boardroom, Floor 4, Projector..."
+                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  />
+                  <svg className="w-4 h-4 absolute left-3 top-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
               </div>
 
               {/* Category */}
               <div className="md:col-span-3">
-                <label htmlFor="category-select" className="block text-xs font-semibold text-slate-500 mb-1">
+                <label htmlFor="category-select" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Category
                 </label>
                 <select
                   id="category-select"
                   name="categoryId"
                   defaultValue={selectedCategory}
-                  className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                 >
                   <option value="">All Categories</option>
                   {categories.map((c) => (
@@ -129,7 +134,7 @@ export default async function ResourcesPage({
 
               {/* Start Date/Time */}
               <div className="md:col-span-2">
-                <label htmlFor="start-input" className="block text-xs font-semibold text-slate-500 mb-1 truncate" title={OFFICE_TIMEZONE_LABEL}>
+                <label htmlFor="start-input" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 truncate" title={`Start time evaluated in ${OFFICE_TIMEZONE_LABEL}`}>
                   Start Time (Sri Lanka)
                 </label>
                 <input
@@ -137,13 +142,13 @@ export default async function ResourcesPage({
                   type="datetime-local"
                   name="start"
                   defaultValue={startAt}
-                  className="w-full px-2.5 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                 />
               </div>
 
               {/* End Date/Time */}
               <div className="md:col-span-2">
-                <label htmlFor="end-input" className="block text-xs font-semibold text-slate-500 mb-1 truncate" title={OFFICE_TIMEZONE_LABEL}>
+                <label htmlFor="end-input" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 truncate" title={`End time evaluated in ${OFFICE_TIMEZONE_LABEL}`}>
                   End Time (Sri Lanka)
                 </label>
                 <input
@@ -151,15 +156,15 @@ export default async function ResourcesPage({
                   type="datetime-local"
                   name="end"
                   defaultValue={endAt}
-                  className="w-full px-2.5 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                 />
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
               <span className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                <span>All booking times are in <strong>{OFFICE_TIMEZONE_LABEL}</strong>.</span>
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+                <span>Times are evaluated in <strong>{OFFICE_TIMEZONE_LABEL}</strong>.</span>
               </span>
 
               <div className="flex items-center gap-2">
@@ -175,7 +180,7 @@ export default async function ResourcesPage({
                 <button
                   type="submit"
                   id="filter-submit-button"
-                  className="px-5 py-2 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 transition-all shadow-sm shadow-emerald-600/20 cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 transition-all shadow-sm shadow-emerald-600/20 cursor-pointer"
                 >
                   Apply & Check Availability
                 </button>
@@ -185,7 +190,7 @@ export default async function ResourcesPage({
 
           {/* Availability error notice */}
           {availability.error && (
-            <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2">
+            <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2">
               <svg className="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
@@ -195,15 +200,15 @@ export default async function ResourcesPage({
 
           {/* Valid availability banner */}
           {availability.isValidRange && (
-            <div className="p-3 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-200 text-xs flex items-center justify-between gap-4">
+            <div className="p-3.5 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
                 <span>
                   Showing live availability for selected time range in <strong>{OFFICE_TIMEZONE_LABEL}</strong>.
                 </span>
               </div>
-              <span className="text-[11px] text-slate-500">
-                Availability will be re-validated atomically during booking.
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                Availability is verified atomically upon booking confirmation.
               </span>
             </div>
           )}
@@ -250,18 +255,18 @@ export default async function ResourcesPage({
                 <div
                   key={resource.id}
                   id={`resource-card-${resource.id}`}
-                  className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 shadow-sm hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all flex flex-col justify-between"
+                  className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 sm:p-7 shadow-sm hover:border-emerald-500/50 hover:shadow-md transition-all flex flex-col justify-between"
                 >
-                  <div className="space-y-3">
+                  <div className="space-y-3.5">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                         {resource.category?.name ?? "General"}
                       </span>
 
-                      {/* Availability status badge if range checked */}
-                      {isChecked && (
+                      {/* Availability status badge ONLY when range is checked */}
+                      {isChecked ? (
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
                             isAvailable
                               ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
                               : "bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-800"
@@ -274,33 +279,35 @@ export default async function ResourcesPage({
                           />
                           {isAvailable ? "Available" : "Reserved for selected time"}
                         </span>
-                      )}
-
-                      {!isChecked && resource.capacity !== null && (
-                        <span className="text-xs text-slate-500 flex items-center gap-1">
-                          <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                          </svg>
-                          <span>Up to {resource.capacity}</span>
-                        </span>
+                      ) : (
+                        resource.capacity !== null && (
+                          <span className="text-xs text-slate-500 flex items-center gap-1">
+                            <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            <span>Up to {resource.capacity}</span>
+                          </span>
+                        )
                       )}
                     </div>
 
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
-                      <Link
-                        href={`/workspace/resources/${resource.id}`}
-                        className="hover:text-emerald-600 transition-colors"
-                      >
-                        {resource.name}
-                      </Link>
-                    </h2>
+                    <div>
+                      <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+                        <Link
+                          href={`/workspace/resources/${resource.id}`}
+                          className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                        >
+                          {resource.name}
+                        </Link>
+                      </h2>
 
-                    <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                      <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <span className="truncate">{resource.location}</span>
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span className="truncate">{resource.location}</span>
+                      </div>
                     </div>
 
                     {resource.description && (
@@ -322,7 +329,7 @@ export default async function ResourcesPage({
                     <Link
                       href={reserveHref}
                       id={`reserve-resource-${resource.id}`}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 shadow-sm shadow-emerald-600/20 transition-all cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 shadow-sm shadow-emerald-600/20 transition-all cursor-pointer"
                     >
                       <span>Reserve</span>
                       <span>→</span>
@@ -344,12 +351,12 @@ export default async function ResourcesPage({
               {data.page > 1 ? (
                 <Link
                   href={buildPageUrl(data.page - 1)}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 font-semibold hover:bg-slate-50 dark:hover:bg-slate-800"
+                  className="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   Previous
                 </Link>
               ) : (
-                <span className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-300 dark:text-slate-700 cursor-not-allowed">
+                <span className="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-300 dark:text-slate-700 cursor-not-allowed">
                   Previous
                 </span>
               )}
@@ -357,12 +364,12 @@ export default async function ResourcesPage({
               {data.page < data.totalPages ? (
                 <Link
                   href={buildPageUrl(data.page + 1)}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 font-semibold hover:bg-slate-50 dark:hover:bg-slate-800"
+                  className="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   Next
                 </Link>
               ) : (
-                <span className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-300 dark:text-slate-700 cursor-not-allowed">
+                <span className="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-300 dark:text-slate-700 cursor-not-allowed">
                   Next
                 </span>
               )}

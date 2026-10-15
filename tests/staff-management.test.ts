@@ -345,7 +345,7 @@ describe("Staff-Account Management (Production Paths)", () => {
     );
 
     // Empty/blank name
-    const resEmptyName = await createStaff(
+    const resBlankName = await createStaff(
       {
         name: "   ",
         email: "valid3@example.local",
@@ -354,8 +354,60 @@ describe("Staff-Account Management (Production Paths)", () => {
       },
       adminUser
     );
+    assert.strictEqual(resBlankName.success, false);
+    assert.strictEqual(resBlankName.fieldErrors?.name, "Name cannot be blank.");
+
+    const resEmptyName = await createStaff(
+      {
+        name: "",
+        email: "valid3@example.local",
+        password: "Password123!",
+        confirmPassword: "Password123!",
+      },
+      adminUser
+    );
     assert.strictEqual(resEmptyName.success, false);
     assert.strictEqual(resEmptyName.fieldErrors?.name, "Name cannot be blank.");
+
+    // Empty/blank email
+    const resEmptyEmail = await createStaff(
+      {
+        name: "Valid Name",
+        email: "",
+        password: "Password123!",
+        confirmPassword: "Password123!",
+      },
+      adminUser
+    );
+    assert.strictEqual(resEmptyEmail.success, false);
+    assert.strictEqual(resEmptyEmail.fieldErrors?.email, "Email address is required.");
+
+    const resBlankEmail = await createStaff(
+      {
+        name: "Valid Name",
+        email: "   ",
+        password: "Password123!",
+        confirmPassword: "Password123!",
+      },
+      adminUser
+    );
+    assert.strictEqual(resBlankEmail.success, false);
+    assert.strictEqual(resBlankEmail.fieldErrors?.email, "Email address is required.");
+
+    // Update staff name with empty and blank strings
+    const resUpdateEmptyName = await updateStaffName(
+      { id: staffUser.id, name: "" },
+      adminUser
+    );
+    assert.strictEqual(resUpdateEmptyName.success, false);
+    assert.strictEqual(resUpdateEmptyName.fieldErrors?.name, "Name cannot be blank.");
+
+    const resUpdateBlankName = await updateStaffName(
+      { id: staffUser.id, name: "   " },
+      adminUser
+    );
+    assert.strictEqual(resUpdateBlankName.success, false);
+    assert.strictEqual(resUpdateBlankName.fieldErrors?.name, "Name cannot be blank.");
 
     // Invalid email format
     const resBadEmail = await createStaff(

@@ -2,40 +2,10 @@
 
 import { useActionState, useState, useRef, useEffect } from "react";
 import { createStaffAction } from "@/features/staff/actions";
-import type { StaffActionResult } from "@/features/staff/types";
+import type { StaffActionResult, StaffUser } from "@/features/staff/types";
 
 export function StaffCreateForm() {
   const [isOpen, setIsOpen] = useState(false);
-  const [nameValue, setNameValue] = useState("");
-  const [emailValue, setEmailValue] = useState("");
-  const [passwordValue, setPasswordValue] = useState("");
-  const [confirmPasswordValue, setConfirmPasswordValue] = useState("");
-
-  const formRef = useRef<HTMLFormElement>(null);
-
-  const [state, formAction, isPending] = useActionState<
-    StaffActionResult,
-    FormData
-  >(async (prev, formData) => {
-    const result = await createStaffAction(prev, formData);
-    // Always clear passwords after submission, regardless of success or failure
-    setPasswordValue("");
-    setConfirmPasswordValue("");
-
-    if (result.success) {
-      setNameValue("");
-      setEmailValue("");
-    }
-    return result;
-  }, { success: false });
-
-  // Auto-scroll or focus when opened
-  useEffect(() => {
-    if (isOpen) {
-      const nameInput = document.getElementById("staff-name-input");
-      nameInput?.focus();
-    }
-  }, [isOpen]);
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm">
@@ -79,7 +49,52 @@ export function StaffCreateForm() {
         </button>
       </div>
 
-      {isOpen && (
+      {isOpen && <StaffCreateFormContent onClose={() => setIsOpen(false)} />}
+    </div>
+  );
+}
+
+function StaffCreateFormContent({ onClose }: { onClose: () => void }) {
+  const [nameValue, setNameValue] = useState("");
+  const [emailValue, setEmailValue] = useState("");
+  const [passwordValue, setPasswordValue] = useState("");
+  const [confirmPasswordValue, setConfirmPasswordValue] = useState("");
+  const [successStaff, setSuccessStaff] = useState<StaffUser | null>(null);
+
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const [state, formAction, isPending] = useActionState<
+    StaffActionResult,
+    FormData
+  >(async (prev, formData) => {
+    setSuccessStaff(null);
+    const result = await createStaffAction(prev, formData);
+    // Always clear passwords after submission, regardless of success or failure
+    setPasswordValue("");
+    setConfirmPasswordValue("");
+
+    if (result.success) {
+      setNameValue("");
+      setEmailValue("");
+      setSuccessStaff(result.staff ?? null);
+    }
+    return result;
+  }, { success: false });
+
+  // Clear previous success message when starting another edit/create action
+  const clearSuccess = () => {
+    if (successStaff) {
+      setSuccessStaff(null);
+    }
+  };
+
+  // Auto-scroll or focus when opened
+  useEffect(() => {
+    const nameInput = document.getElementById("staff-name-input");
+    nameInput?.focus();
+  }, []);
+
+  return (
         <div id="create-staff-form-container" className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
           {/* Important Security & Credential Disclosure Notice */}
           <div className="mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 text-amber-800 dark:text-amber-300 text-xs leading-relaxed space-y-1">
@@ -111,7 +126,7 @@ export function StaffCreateForm() {
             </div>
           )}
 
-          {state?.success && state.staff && (
+          {successStaff && (
             <div
               role="status"
               id="staff-create-success"
@@ -123,7 +138,7 @@ export function StaffCreateForm() {
               <div>
                 <p className="font-semibold">Staff Account Created Successfully!</p>
                 <p className="mt-0.5 text-xs text-emerald-700 dark:text-emerald-300">
-                  Account for <strong>{state.staff.name}</strong> ({state.staff.email}) is active and ready for login. Remember to securely communicate their initial password.
+                  Account for <strong>{successStaff.name}</strong> ({successStaff.email}) is active and ready for login. Remember to securely communicate their initial password.
                 </p>
               </div>
             </div>
@@ -146,7 +161,10 @@ export function StaffCreateForm() {
                   required
                   maxLength={100}
                   value={nameValue}
-                  onChange={(e) => setNameValue(e.target.value)}
+                  onChange={(e) => {
+                    setNameValue(e.target.value);
+                    clearSuccess();
+                  }}
                   placeholder="e.g. Alice Johnson"
                   disabled={isPending}
                   className={`w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-950 border transition-all text-slate-900 dark:text-slate-100 ${
@@ -179,7 +197,10 @@ export function StaffCreateForm() {
                   required
                   maxLength={255}
                   value={emailValue}
-                  onChange={(e) => setEmailValue(e.target.value)}
+                  onChange={(e) => {
+                    setEmailValue(e.target.value);
+                    clearSuccess();
+                  }}
                   placeholder="alice@reserve.local"
                   disabled={isPending}
                   className={`w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-950 border transition-all text-slate-900 dark:text-slate-100 ${
@@ -215,7 +236,10 @@ export function StaffCreateForm() {
                   minLength={8}
                   maxLength={128}
                   value={passwordValue}
-                  onChange={(e) => setPasswordValue(e.target.value)}
+                  onChange={(e) => {
+                    setPasswordValue(e.target.value);
+                    clearSuccess();
+                  }}
                   placeholder="Min. 8 characters"
                   autoComplete="new-password"
                   disabled={isPending}
@@ -254,7 +278,10 @@ export function StaffCreateForm() {
                   minLength={8}
                   maxLength={128}
                   value={confirmPasswordValue}
-                  onChange={(e) => setConfirmPasswordValue(e.target.value)}
+                  onChange={(e) => {
+                    setConfirmPasswordValue(e.target.value);
+                    clearSuccess();
+                  }}
                   placeholder="Repeat initial password"
                   autoComplete="new-password"
                   disabled={isPending}
@@ -277,7 +304,7 @@ export function StaffCreateForm() {
             <div className="pt-2 flex items-center justify-end gap-3">
               <button
                 type="button"
-                onClick={() => setIsOpen(false)}
+                onClick={onClose}
                 className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               >
                 Cancel
@@ -298,8 +325,6 @@ export function StaffCreateForm() {
               </button>
             </div>
           </form>
-        </div>
-      )}
     </div>
   );
 }

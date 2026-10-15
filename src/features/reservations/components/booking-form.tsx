@@ -28,11 +28,28 @@ export function BookingForm({
   const [purpose, setPurpose] = useState("");
   const [startAt, setStartAt] = useState(initialStart);
   const [endAt, setEndAt] = useState(initialEnd);
+  const [successReservation, setSuccessReservation] = useState<
+    NonNullable<ReservationActionResult["reservation"]> | null
+  >(null);
 
   const [state, formAction, isPending] = useActionState<ReservationActionResult | null, FormData>(
-    createReservationAction,
+    async (prev, formData) => {
+      setSuccessReservation(null);
+      const res = await createReservationAction(prev, formData);
+      if (res.success && res.reservation) {
+        setSuccessReservation(res.reservation);
+        setPurpose("");
+      }
+      return res;
+    },
     null
   );
+
+  const clearSuccess = () => {
+    if (successReservation) {
+      setSuccessReservation(null);
+    }
+  };
 
   if (!isActive) {
     return (
@@ -61,7 +78,7 @@ export function BookingForm({
       </div>
 
       {/* Success Banner */}
-      {state?.success && state.reservation && (
+      {successReservation && (
         <div
           role="status"
           id="booking-success-banner"
@@ -81,16 +98,16 @@ export function BookingForm({
               <strong>Resource:</strong> {resourceName} ({resourceLocation})
             </p>
             <p>
-              <strong>Time (Sri Lanka):</strong> {formatDateTimeInOfficeTz(state.reservation.startAt)} – {formatDateTimeInOfficeTz(state.reservation.endAt)}
+              <strong>Time (Sri Lanka):</strong> {formatDateTimeInOfficeTz(successReservation.startAt)} – {formatDateTimeInOfficeTz(successReservation.endAt)}
             </p>
             <p>
-              <strong>Purpose:</strong> {state.reservation.purpose}
+              <strong>Purpose:</strong> {successReservation.purpose}
             </p>
           </div>
 
           <div className="flex items-center gap-3 pt-2 pl-8">
             <Link
-              href={`/workspace/reservations/${state.reservation.id}`}
+              href={`/workspace/reservations/${successReservation.id}`}
               id="view-created-booking-link"
               className="inline-flex items-center px-4 py-2 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 shadow-sm shadow-emerald-600/20"
             >
@@ -100,7 +117,7 @@ export function BookingForm({
               href="/workspace/reservations"
               className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:underline"
             >
-              Go to My Reservations
+              Go to My Bookings
             </Link>
           </div>
         </div>
@@ -151,20 +168,28 @@ export function BookingForm({
               htmlFor="booking-start"
               className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1"
             >
-              Start Time (Sri Lanka Time) *
+              Start Time (Sri Lanka Time) <span className="text-red-500">*</span>
             </label>
             <input
               id="booking-start"
               type="datetime-local"
               name="startAt"
               value={startAt}
-              onChange={(e) => setStartAt(e.target.value)}
+              onChange={(e) => {
+                setStartAt(e.target.value);
+                clearSuccess();
+              }}
               required
-              aria-describedby="timezone-note start-error"
-              className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+              aria-invalid={Boolean(state?.fieldErrors?.startAt)}
+              aria-describedby={state?.fieldErrors?.startAt ? "start-error timezone-note" : "timezone-note"}
+              className={`w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-slate-950 border transition-all text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 ${
+                state?.fieldErrors?.startAt
+                  ? "border-red-300 dark:border-red-800"
+                  : "border-slate-200 dark:border-slate-800"
+              }`}
             />
             {state?.fieldErrors?.startAt && (
-              <p id="start-error" className="mt-1 text-xs text-rose-600 dark:text-rose-400 font-medium">
+              <p id="start-error" role="alert" className="mt-1 text-xs text-rose-600 dark:text-rose-400 font-medium">
                 {state.fieldErrors.startAt}
               </p>
             )}
@@ -175,20 +200,28 @@ export function BookingForm({
               htmlFor="booking-end"
               className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1"
             >
-              End Time (Sri Lanka Time) *
+              End Time (Sri Lanka Time) <span className="text-red-500">*</span>
             </label>
             <input
               id="booking-end"
               type="datetime-local"
               name="endAt"
               value={endAt}
-              onChange={(e) => setEndAt(e.target.value)}
+              onChange={(e) => {
+                setEndAt(e.target.value);
+                clearSuccess();
+              }}
               required
-              aria-describedby="timezone-note end-error"
-              className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+              aria-invalid={Boolean(state?.fieldErrors?.endAt)}
+              aria-describedby={state?.fieldErrors?.endAt ? "end-error timezone-note" : "timezone-note"}
+              className={`w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-slate-950 border transition-all text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 ${
+                state?.fieldErrors?.endAt
+                  ? "border-red-300 dark:border-red-800"
+                  : "border-slate-200 dark:border-slate-800"
+              }`}
             />
             {state?.fieldErrors?.endAt && (
-              <p id="end-error" className="mt-1 text-xs text-rose-600 dark:text-rose-400 font-medium">
+              <p id="end-error" role="alert" className="mt-1 text-xs text-rose-600 dark:text-rose-400 font-medium">
                 {state.fieldErrors.endAt}
               </p>
             )}
@@ -209,7 +242,7 @@ export function BookingForm({
               htmlFor="booking-purpose"
               className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
             >
-              Reservation Purpose *
+              Reservation Purpose <span className="text-red-500">*</span>
             </label>
             <span className="text-[11px] text-slate-400">
               {purpose.length}/500 chars
@@ -219,16 +252,24 @@ export function BookingForm({
             id="booking-purpose"
             name="purpose"
             value={purpose}
-            onChange={(e) => setPurpose(e.target.value)}
+            onChange={(e) => {
+              setPurpose(e.target.value);
+              clearSuccess();
+            }}
             required
             maxLength={500}
             rows={3}
             placeholder="Describe the meeting, project activity, or event (e.g. Q4 Strategy Review with Engineering leads)..."
-            aria-describedby="purpose-error"
-            className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+            aria-invalid={Boolean(state?.fieldErrors?.purpose)}
+            aria-describedby={state?.fieldErrors?.purpose ? "purpose-error" : undefined}
+            className={`w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-slate-950 border transition-all text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 ${
+              state?.fieldErrors?.purpose
+                ? "border-red-300 dark:border-red-800"
+                : "border-slate-200 dark:border-slate-800"
+            }`}
           />
           {state?.fieldErrors?.purpose && (
-            <p id="purpose-error" className="mt-1 text-xs text-rose-600 dark:text-rose-400 font-medium">
+            <p id="purpose-error" role="alert" className="mt-1 text-xs text-rose-600 dark:text-rose-400 font-medium">
               {state.fieldErrors.purpose}
             </p>
           )}

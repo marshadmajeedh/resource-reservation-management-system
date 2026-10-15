@@ -319,11 +319,6 @@ export async function createResource(
 
   if (!isValidUuid(input.categoryId)) {
     fieldErrors.categoryId = "A valid category must be selected.";
-  } else {
-    const categoryExists = await findCategoryByIdRecord(input.categoryId);
-    if (!categoryExists) {
-      fieldErrors.categoryId = "The selected category does not exist.";
-    }
   }
 
   if (Object.keys(fieldErrors).length > 0) {
@@ -332,6 +327,15 @@ export async function createResource(
       success: false,
       error: firstErrorMessage,
       fieldErrors,
+    };
+  }
+
+  const categoryExists = await findCategoryByIdRecord(input.categoryId);
+  if (!categoryExists) {
+    return {
+      success: false,
+      error: "The selected category does not exist.",
+      fieldErrors: { categoryId: "The selected category does not exist." },
     };
   }
 
@@ -373,14 +377,6 @@ export async function updateResource(
     };
   }
 
-  const existing = await findResourceByIdRecord(input.id);
-  if (!existing) {
-    return {
-      success: false,
-      error: "Resource not found.",
-    };
-  }
-
   const fieldErrors: Record<string, string> = {};
 
   const nameCheck = validateRequiredText(input.name, "Resource name", 100);
@@ -405,11 +401,6 @@ export async function updateResource(
 
   if (!isValidUuid(input.categoryId)) {
     fieldErrors.categoryId = "A valid category must be selected.";
-  } else {
-    const categoryExists = await findCategoryByIdRecord(input.categoryId);
-    if (!categoryExists) {
-      fieldErrors.categoryId = "The selected category does not exist.";
-    }
   }
 
   if (Object.keys(fieldErrors).length > 0) {
@@ -418,6 +409,23 @@ export async function updateResource(
       success: false,
       error: firstErrorMessage,
       fieldErrors,
+    };
+  }
+
+  const existing = await findResourceByIdRecord(input.id);
+  if (!existing) {
+    return {
+      success: false,
+      error: "Resource not found.",
+    };
+  }
+
+  const categoryExists = await findCategoryByIdRecord(input.categoryId);
+  if (!categoryExists) {
+    return {
+      success: false,
+      error: "The selected category does not exist.",
+      fieldErrors: { categoryId: "The selected category does not exist." },
     };
   }
 

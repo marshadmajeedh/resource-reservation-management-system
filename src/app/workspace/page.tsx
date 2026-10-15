@@ -5,8 +5,8 @@ import { WorkspaceNav } from "@/components/workspace-nav";
 export const instant = false;
 
 export const metadata = {
-  title: "Workspace - Reserve Resource Management",
-  description: "User workspace for resource reservation and profile management.",
+  title: "Workspace - Reserve",
+  description: "User workspace for office resource reservation and schedule management.",
 };
 
 export default async function WorkspacePage() {
@@ -19,11 +19,11 @@ export default async function WorkspacePage() {
 
       {/* Main Workspace Body */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 flex flex-col gap-8">
-        {/* Profile / Status Banner */}
+        {/* Welcome / Primary Action Banner */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
                 Welcome, {user.name}
               </h1>
               <span
@@ -34,34 +34,35 @@ export default async function WorkspacePage() {
                     : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
                 }`}
               >
-                {isAdmin ? "Admin" : "Staff"}
+                {isAdmin ? "Admin" : "Staff Member"}
               </span>
             </div>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Your account is verified and authenticated via server-side session.
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Find shared office resources, reserve a time, and manage your bookings in one place.
             </p>
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
             <Link
-              id="my-reservations-link"
-              href="/workspace/reservations"
-              className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700"
-            >
-              My Reservations
-            </Link>
-            <Link
               id="browse-resources-link"
               href="/workspace/resources"
-              className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 transition-all shadow-md shadow-emerald-600/20"
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 transition-all shadow-sm shadow-emerald-600/20 cursor-pointer"
             >
-              Browse Resources
+              <span>Browse Resources</span>
+              <span>→</span>
+            </Link>
+            <Link
+              id="my-reservations-link"
+              href="/workspace/reservations"
+              className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700 cursor-pointer"
+            >
+              My Bookings
             </Link>
             {isAdmin && (
               <Link
                 id="admin-console-link"
                 href="/workspace/admin"
-                className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-sm font-semibold text-white bg-purple-600 hover:bg-purple-500 transition-all shadow-md shadow-purple-600/20"
+                className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 transition-all border border-purple-200 dark:border-purple-800 cursor-pointer"
               >
                 Admin Console
               </Link>
@@ -73,22 +74,22 @@ export default async function WorkspacePage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Link
             href="/workspace/resources"
-            className="group p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:border-emerald-500/50 hover:shadow-md transition-all flex flex-col justify-between"
+            className="group p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:border-emerald-500/50 hover:shadow-md transition-all flex flex-col justify-between"
           >
             <div>
-              <div className="h-10 w-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4">
+              <div className="h-11 w-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-5">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
               </div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 transition-colors">
-                Resource Catalog
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                Browse Resources
               </h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Explore available office conference rooms, focus booths, and equipment. Search by name or filter by location and category.
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                Explore meeting rooms, quiet focus booths, open desks, and shared hardware. Filter by location, capacity, or specific time range.
               </p>
             </div>
-            <div className="mt-6 flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+            <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
               <span>View catalog</span>
               <span>→</span>
             </div>
@@ -96,22 +97,22 @@ export default async function WorkspacePage() {
 
           <Link
             href="/workspace/reservations"
-            className="group p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:border-teal-500/50 hover:shadow-md transition-all flex flex-col justify-between"
+            className="group p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:border-emerald-500/50 hover:shadow-md transition-all flex flex-col justify-between"
           >
             <div>
-              <div className="h-10 w-10 rounded-2xl bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 flex items-center justify-center mb-4">
+              <div className="h-11 w-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-5">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-teal-600 transition-colors">
-                My Reservations
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                My Bookings
               </h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                View your active, upcoming, in-progress, and past resource bookings. Review booking details and cancel reservations if needed.
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                View your upcoming, in-progress, and past reservations. Review booking purpose, check intervals, and cancel bookings if plans change.
               </p>
             </div>
-            <div className="mt-6 flex items-center gap-1 text-xs font-semibold text-teal-600 dark:text-teal-400">
+            <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
               <span>View my bookings</span>
               <span>→</span>
             </div>
@@ -119,68 +120,67 @@ export default async function WorkspacePage() {
 
           {isAdmin ? (
             <Link
-              href="/workspace/admin/reservations"
-              className="group p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:border-purple-500/50 hover:shadow-md transition-all flex flex-col justify-between"
+              href="/workspace/admin"
+              className="group p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:border-purple-500/50 hover:shadow-md transition-all flex flex-col justify-between"
             >
               <div>
-                <div className="h-10 w-10 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-4">
+                <div className="h-11 w-11 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-5">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-purple-600 transition-colors">
-                  All Reservations
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                  Admin Console
                 </h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  Administrative overview of all organizational reservations across resources, staff members, and time intervals.
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Manage resources and categories, supervise all organizational bookings across staff, and provision user accounts.
                 </p>
               </div>
-              <div className="mt-6 flex items-center gap-1 text-xs font-semibold text-purple-600 dark:text-purple-400">
-                <span>View all reservations</span>
+              <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1 text-xs font-semibold text-purple-600 dark:text-purple-400">
+                <span>Open admin console</span>
                 <span>→</span>
               </div>
             </Link>
           ) : (
-            <div className="p-6 rounded-3xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 flex flex-col justify-between">
+            <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm flex flex-col justify-between">
               <div>
-                <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-400">
-                  Staff Role
-                </span>
-                <h2 className="mt-2 text-base font-bold text-slate-700 dark:text-slate-300">
-                  Standard Access
+                <div className="h-11 w-11 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center mb-5">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                  Reservation Guide
                 </h2>
-                <p className="mt-1 text-xs text-slate-500 leading-relaxed">
-                  As a staff member, you can book any active office resource for yourself, check live availability, and manage your reservations.
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                  All reservations are evaluated in Sri Lanka Time with strict conflict prevention. Bookings can be confirmed immediately without waiting for approval.
                 </p>
               </div>
-              <p className="mt-4 text-[11px] text-slate-400">
-                Facility configuration is managed by workspace administrators.
-              </p>
+              <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
+                <span>Asia/Colombo • Conflict-free</span>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Account Details Card */}
+        {/* Account Details Card (Real database session data only) */}
         <section className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-          <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
-            Session Details
-          </h2>
+          <div>
+            <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+              Account Information
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Current authenticated session and profile details.
+            </p>
+          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200/60 dark:border-slate-800">
-              <span className="text-xs uppercase tracking-wider font-semibold text-slate-400">
-                User ID
-              </span>
-              <p id="user-id-value" className="mt-1 font-mono text-xs text-slate-700 dark:text-slate-300 truncate">
-                {user.id}
-              </p>
-            </div>
-
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200/60 dark:border-slate-800">
               <span className="text-xs uppercase tracking-wider font-semibold text-slate-400">
                 Email Address
               </span>
-              <p id="user-email-value" className="mt-1 font-semibold text-sm text-slate-900 dark:text-white truncate">
+              <p id="user-email-value" className="mt-1 font-semibold text-sm text-slate-900 dark:text-white truncate" title={user.email}>
                 {user.email}
               </p>
             </div>
@@ -190,7 +190,7 @@ export default async function WorkspacePage() {
                 Assigned Role
               </span>
               <p id="user-role-value" className="mt-1 font-semibold text-sm text-slate-900 dark:text-white">
-                {user.role}
+                {user.role === "ADMIN" ? "Administrator" : "Staff Member"}
               </p>
             </div>
 
@@ -199,7 +199,7 @@ export default async function WorkspacePage() {
                 Account Status
               </span>
               <p className="mt-1 font-semibold text-sm text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
                 Active
               </p>
             </div>

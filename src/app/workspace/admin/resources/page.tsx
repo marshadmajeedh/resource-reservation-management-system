@@ -8,7 +8,7 @@ import type { ResourceStatusFilter } from "@/features/resources/types";
 export const instant = false;
 
 export const metadata = {
-  title: "Manage Resources - Reserve Resource Management",
+  title: "Manage Resources - Reserve",
   description: "Administrative catalog for managing, configuring, and toggling office resources.",
 };
 

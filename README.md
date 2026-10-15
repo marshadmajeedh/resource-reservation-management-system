@@ -109,6 +109,8 @@ This system provides a unified, hardened internal management portal where:
 
 ![Entity Relationship (ER) Diagram](internTechnicalAssesmentERD.drawio.png)
 
+- **Draw.io ER Diagram Link:** [https://drive.google.com/file/d/1f_SflD2tCAHyPCCUMpl5mSYOQto9s3oc/view?usp=sharing](https://drive.google.com/file/d/1f_SflD2tCAHyPCCUMpl5mSYOQto9s3oc/view?usp=sharing)
+
 ### Final ER Diagram Specification & Design Notes
 
 The production system implements a strict four-entity relational schema with zero redundant tables or denormalized availability columns:
