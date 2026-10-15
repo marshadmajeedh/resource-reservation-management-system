@@ -1,34 +1,97 @@
+import type { ReservationTemporalStatus } from "@/lib/timezone";
+
 /**
  * Reservation Domain Types
- * Defines data contracts for booking resources, status handling, and overlap prevention.
+ * Contracts for reservations, availability checks, queries, and mutations.
  */
 
-export type ReservationStatus = "confirmed" | "cancelled";
+export type ReservationStatus = "CONFIRMED" | "CANCELLED";
+export type { ReservationTemporalStatus };
+
+export interface ReservationUserSummary {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface ReservationResourceSummary {
+  id: string;
+  name: string;
+  location: string;
+  capacity: number | null;
+  isActive: boolean;
+  category?: {
+    id?: string;
+    name: string;
+  };
+}
 
 export interface Reservation {
   id: string;
-  resourceId: string;
   userId: string;
-  title?: string;
-  notes?: string;
-  startTime: string; // ISO 8601 timestamp
-  endTime: string;   // ISO 8601 timestamp
+  resourceId: string;
+  purpose: string;
+  startAt: Date;
+  endAt: Date;
   status: ReservationStatus;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  cancelledAt: Date | null;
+  cancelledById: string | null;
+  cancellationReason: string | null;
+  resource?: ReservationResourceSummary;
+  user?: ReservationUserSummary;
+  cancelledBy?: ReservationUserSummary | null;
+  temporalStatus?: ReservationTemporalStatus;
 }
 
 export interface CreateReservationInput {
   resourceId: string;
-  title?: string;
-  notes?: string;
-  startTime: string;
-  endTime: string;
+  purpose: string;
+  startAtRaw: string; // Datetime string in Sri Lanka time (Asia/Colombo)
+  endAtRaw: string;   // Datetime string in Sri Lanka time (Asia/Colombo)
 }
 
-export interface ReservationConflictCheck {
+export interface CancelReservationInput {
+  reservationId: string;
+  reason?: string;
+}
+
+export type ReservationStatusFilter = "all" | "upcoming" | "in_progress" | "finished" | "cancelled";
+
+export interface ReservationFilterParams {
+  userId?: string;
+  resourceId?: string;
+  statusFilter?: ReservationStatusFilter;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface PaginatedReservations {
+  items: Reservation[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface ReservationActionResult {
+  success: boolean;
+  error?: string;
+  conflictMessage?: string;
+  fieldErrors?: Record<string, string>;
+  reservation?: Reservation;
+  alreadyCancelled?: boolean;
+}
+
+export interface ResourceAvailabilityItem {
   resourceId: string;
-  startTime: string;
-  endTime: string;
-  excludeReservationId?: string;
+  isAvailable: boolean;
+}
+
+export interface AvailabilityCheckResult {
+  isValidRange: boolean;
+  startAt?: Date;
+  endAt?: Date;
+  error?: string;
+  availabilityByResourceId: Record<string, boolean>;
 }

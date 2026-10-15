@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/features/auth/dal";
 import { getResourceById, isValidUuid } from "@/features/resources/service";
+import { BookingForm } from "@/features/reservations/components/booking-form";
 import { WorkspaceNav } from "@/components/workspace-nav";
 
 export const instant = false;
@@ -9,6 +10,10 @@ export const instant = false;
 interface ResourceDetailPageProps {
   params: Promise<{
     id: string;
+  }>;
+  searchParams?: Promise<{
+    start?: string;
+    end?: string;
   }>;
 }
 
@@ -24,9 +29,13 @@ export async function generateMetadata({ params }: ResourceDetailPageProps) {
 
 export default async function ResourceDetailPage({
   params,
+  searchParams,
 }: ResourceDetailPageProps) {
   const user = await requireUser();
   const { id } = await params;
+  const sp = searchParams ? await searchParams : {};
+  const initialStart = sp.start || "";
+  const initialEnd = sp.end || "";
 
   if (!isValidUuid(id)) {
     notFound();
@@ -178,6 +187,19 @@ export default async function ResourceDetailPage({
               No detailed description provided for this resource.
             </p>
           )}
+        </section>
+
+        {/* Interactive Booking Section */}
+        <section id="reserve-section">
+          <BookingForm
+            resourceId={resource.id}
+            resourceName={resource.name}
+            resourceLocation={resource.location}
+            resourceCapacity={resource.capacity}
+            isActive={resource.isActive}
+            initialStart={initialStart}
+            initialEnd={initialEnd}
+          />
         </section>
       </main>
     </div>

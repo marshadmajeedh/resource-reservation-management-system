@@ -61,7 +61,7 @@ export default async function AdminWorkspacePage() {
         </div>
 
         {/* Management Quick Navigation */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Link
             href="/workspace/admin/resources"
             className="group p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:border-purple-500/50 hover:shadow-md transition-all flex flex-col justify-between"
@@ -104,6 +104,29 @@ export default async function AdminWorkspacePage() {
             </div>
             <div className="mt-6 flex items-center gap-1 text-xs font-semibold text-purple-600 dark:text-purple-400">
               <span>Manage categories</span>
+              <span>→</span>
+            </div>
+          </Link>
+
+          <Link
+            href="/workspace/admin/reservations"
+            className="group p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:border-purple-500/50 hover:shadow-md transition-all flex flex-col justify-between"
+          >
+            <div>
+              <div className="h-10 w-10 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-4">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+              </div>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-purple-600 transition-colors">
+                All Reservations
+              </h2>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                View all organizational bookings across employees and facilities, filter by status, inspect intervals, and manage cancellations.
+              </p>
+            </div>
+            <div className="mt-6 flex items-center gap-1 text-xs font-semibold text-purple-600 dark:text-purple-400">
+              <span>View all bookings</span>
               <span>→</span>
             </div>
           </Link>

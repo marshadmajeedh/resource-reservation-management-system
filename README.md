@@ -231,7 +231,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the application:
 - **Legitimate User Lockout Risk**: Because rate limiting is keyed on normalized account email to effectively thwart credential-stuffing without relying on untrusted/spoofable client IP headers, a malicious actor deliberately submitting 5 invalid password guesses for a specific target email will trigger the 15-minute block. During this lockout window, the legitimate account owner will also be temporarily prevented from logging in until the lockout duration expires.
 
 ### 2. Stateless JWT Logout Limitation
-- **Cookie Clearing**: Logging out clears the `rrs_session` HttpOnly cookie from the browser with `Max-Age=0`.
+- **Cookie Clearing**: Logging out clears the `rrs_session` HttpOnly cookie from the browser with `Max-Age=0`. Logout clears the cookie but does not revoke a copied JWT before expiry.
 - **Token Validity Limitation**: Because this system uses stateless JWTs without a distributed revocation table or token blacklist, a previously copied or intercepted JWT remains cryptographically valid until its 8-hour expiry. Deactivating the user account in the database, however, revokes access immediately on all subsequent requests because the server validates active status on every request.
 
 ---
@@ -279,6 +279,61 @@ Open [http://localhost:3000](http://localhost:3000) to view the application:
 
 ---
 
+---
+
+## Reservation Management & Concurrency Architecture
+
+### 1. Booking Policy & Validation Rules
+- **Authentication & User Identity**:
+  - `userId` is strictly derived from the verified session token on the server (`getCurrentUser()`). Client-submitted or forged user IDs are completely ignored.
+  - Active `STAFF` and `ADMIN` users can create reservations for themselves.
+  - Inactive accounts or unauthenticated callers are rejected at the server boundary.
+- **Resource Constraints**:
+  - The requested resource must exist and have `is_active = true`. Deactivated resources cannot be booked.
+  - Historical reservations for deactivated resources remain accessible in booking history.
+- **Purpose**:
+  - Required, trimmed, 1–500 characters. Blank or whitespace-only inputs are rejected.
+- **Time Interval & Calendar Validation**:
+  - Validates genuine calendar dates (rejects non-existent days like Feb 30 or April 31 without silent JavaScript date rollover).
+  - `start_at` must be strictly in the future when processed by the server transaction.
+  - `end_at` must be strictly later than `start_at`.
+  - Supports arbitrary duration, overnight bookings, and multi-day spans (no arbitrary office-hour limits).
+- **Overlap Rules**:
+  - `CONFIRMED` reservations for the same resource cannot overlap.
+  - Back-to-back contiguous bookings (e.g. 10:00–11:00 and 11:00–12:00) are permitted and supported by `[start, end)` range semantics.
+  - Different resources can be booked simultaneously, including by the same user.
+  - `CANCELLED` reservations release the reserved slot immediately.
+
+### 2. Timezone Policy (Asia/Colombo, UTC+5:30)
+- **Official Office Timezone**: All bookings operate in `Asia/Colombo` time (Sri Lanka Standard Time, fixed UTC+05:30 offset, no daylight saving time).
+- **Timezone Determinism**: Datetime inputs (`YYYY-MM-DDTHH:mm`) are parsed using explicit calendar decomposition and converted into UTC Instants via `Date.UTC(...) - 330 minutes`. The resulting instant is completely independent of the server's or browser's host timezone (`process.env.TZ`).
+- **Display Standardization**: All displayed timestamps across resource browsing, booking forms, My Reservations, and Admin All Reservations format consistently using `Intl.DateTimeFormat` with `timeZone: "Asia/Colombo"`.
+
+### 3. Creation & Row-Locking Concurrency Architecture
+To prevent TOCTOU (Time-of-Check to Time-of-Use) race conditions and eliminate races with resource deactivation, reservation creation runs inside an interactive database transaction:
+1. **Acquire Symmetric Resource Row Lock**: Executes `SELECT id, is_active FROM resources WHERE id = $1::uuid FOR UPDATE`. This is the exact same row lock taken by resource deactivation.
+2. **Re-verify Active State**: Reads `is_active` after lock acquisition. If an administrator deactivated the resource concurrently, the lock serializes the operations and booking fails with: `"Cannot reserve this resource because it has been deactivated."`
+3. **Re-validate Future Start**: Re-verifies `start_at > now()`.
+4. **Pre-check Overlaps**: Queries confirmed overlapping bookings to return friendly conflict messages (`"This resource is already reserved for your selected time. Please choose another time or resource."`).
+5. **Atomic Insert**: Inserts reservation as `CONFIRMED` with `NULL` cancellation metadata.
+6. **PostgreSQL GiST Exclusion Constraint**: The underlying PostgreSQL GiST exclusion constraint (`reservations_no_overlapping_confirmed` with `btree_gist`) acts as the immutable database safeguard. Driver exclusion violations (`23P01`) are mapped to clean conflict messages.
+
+### 4. Cancellation Policy & Deadlock Prevention
+- **Authorization**:
+  - Reservation owners and administrators can cancel upcoming or in-progress reservations.
+  - Unauthorized users cannot cancel or view other employees' reservations.
+- **Retroactive Protection**:
+  - Finished reservations (`end_at <= now()`) cannot be cancelled retroactively.
+- **Reason Requirements**:
+  - Administrators cancelling another user's reservation are **required** to supply a nonblank reason.
+  - Users cancelling their own reservation may optionally supply a reason.
+- **Lock Ordering & Deadlock Risk Reduction**:
+  - When locking both the resource and reservation rows during cancellation, operations strictly lock the **resource row first** (`FOR UPDATE`), followed by the **reservation row second** (`FOR UPDATE`). Consistent lock ordering reduces deadlock risk; it does not prove all deadlocks are impossible.
+- **Idempotency & Re-entrancy**:
+  - Repeated or concurrent cancellation requests return an already-cancelled response without overwriting the original cancellation actor, timestamp, or reason.
+
+---
+
 ## Available Scripts
 
 | Command | Description |
@@ -288,12 +343,66 @@ Open [http://localhost:3000](http://localhost:3000) to view the application:
 | `npm run start` | Starts the production server |
 | `npm run lint` | Runs ESLint style and quality checks |
 | `npm run typecheck` | Validates TypeScript types across the codebase |
-| `npm test` | Runs the complete automated test suite (db constraints, auth, and resources) |
+| `npm test` | Runs the complete automated test suite (db constraints, auth, resources, reservations) |
 | `npm run test:db` | Runs isolated database constraint and concurrency tests |
 | `npm run test:auth` | Runs isolated authentication, JWT, and authorization tests |
 | `npm run test:resources` | Runs isolated resource and category management tests |
+| `npm run test:reservations` | Runs isolated reservation lifecycle, timezone, and concurrency tests |
 | `npm run create-admin` | CLI command to safely create the initial administrator |
 | `npm run prisma:generate` | Generates the Prisma 7 client |
 | `npm run prisma:migrate` | Deploys versioned migrations (`prisma migrate deploy`) |
+
+---
+
+## Manual Verification & Demo Checklist
+
+Follow this checklist to test the complete booking and cancellation flow:
+
+1. **Start the Application**:
+   ```bash
+   npm run dev
+   ```
+   Open `http://localhost:3000` in your browser.
+
+2. **Sign In as Staff**:
+   - Log in with staff credentials.
+   - Observe the navigation bar includes **Browse Resources** and **My Reservations**.
+
+3. **Check Live Availability in Browse Resources**:
+   - Navigate to `/workspace/resources`.
+   - Select a future date and time window (e.g. tomorrow 10:00 AM to 12:00 PM).
+   - Click **Apply & Check Availability**.
+   - Notice each resource card updates with live availability badges ("Available" or "Reserved for selected time").
+   - Click **Reserve** on an available resource card.
+
+4. **Complete a Reservation**:
+   - On `/workspace/resources/[id]`, review resource specifications.
+   - Verify start and end times default to your selected window (labeled as Asia/Colombo Sri Lanka time).
+   - Enter a purpose (e.g., "Engineering Quarterly Review").
+   - Click **Confirm & Reserve Resource**.
+   - Observe the green confirmation banner detailing the saved reservation and Colombo timestamps.
+
+5. **Verify Conflict Prevention**:
+   - Attempt to book the exact same resource for an overlapping time (e.g. tomorrow 11:00 AM to 01:00 PM).
+   - Submit the booking.
+   - Observe the conflict banner: *"This resource is already reserved for your selected time. Please choose another time or resource."* Notice form inputs are preserved.
+
+6. **Inspect My Reservations**:
+   - Navigate to `/workspace/reservations`.
+   - Verify your new reservation appears with the **Upcoming** badge, Sri Lanka times, and purpose.
+   - Test the filter tabs (**Upcoming**, **In Progress**, **Finished**, **Cancelled**).
+
+7. **Cancel a Reservation**:
+   - Click on the reservation card to open `/workspace/reservations/[id]`.
+   - Click **Cancel Reservation**.
+   - Provide an optional cancellation note and confirm.
+   - Observe status updates immediately to **Cancelled**, showing cancellation metadata.
+   - Re-check availability for that time window on `/workspace/resources` — verify the slot is immediately released!
+
+8. **Admin Cancellation Oversight**:
+   - Sign out and log in as an **Administrator**.
+   - Navigate to `/workspace/admin/reservations` (**All Reservations**).
+   - Observe all organizational bookings with employee names, email addresses, and status badges.
+   - Click **Manage** on a staff booking and test administrative cancellation; observe that a cancellation reason is strictly required.
 
 
