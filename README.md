@@ -334,6 +334,53 @@ To prevent TOCTOU (Time-of-Check to Time-of-Use) race conditions and eliminate r
 
 ---
 
+## Staff-Account Management Workflow & Architecture
+
+### 1. Scope & Role Isolation
+- **Administrator Capabilities**:
+  - View a paginated master staff directory (`/workspace/admin/staff`) with case-insensitive search and status filters (All, Active, Inactive).
+  - Provision new `STAFF` accounts with full name, email, and initial password.
+  - Edit staff display names (email addresses remain immutable).
+  - Explicitly activate or deactivate staff accounts.
+- **Strict Role Isolation**:
+  - Operations target accounts with `role = 'STAFF'` exclusively.
+  - Attempts to edit, deactivate, or manage `ADMIN` accounts through the staff interface are rejected at the service and repository layers (`AdminAccountModificationError`).
+  - Submitted `role` or permission fields from browsers are never trusted; role is strictly locked to `STAFF` server-side.
+- **Non-Goals / Excluded Scope**:
+  - Public registration, email invitations, self-service password reset, role promotion, admin-account editing, and account deletion are explicitly outside the scope of this feature.
+
+### 2. Account Creation & Security Policy
+- **Input Validation**:
+  - Name: Required, trimmed, 1–100 characters.
+  - Email: Required, bounded (max 255 characters), RFC-compliant format regex.
+  - Password & Confirmation: Required, 8–128 characters, matching confirmation.
+- **Email Normalization Policy**:
+  - Emails are normalized system-wide before persistence and lookup: `email.trim().toLowerCase()`.
+  - Duplicate emails are enforced by the database unique constraint and mapped to a friendly user error: *"An account with this email address already exists."*
+- **Argon2id Password Hashing**:
+  - Passwords are hashed using the OWASP-compliant `@node-rs/argon2` helper with identical parameters across auth and staff services.
+- **Zero Credential Exposure**:
+  - Plaintext passwords and `passwordHash` are never logged, returned from actions or services, persisted in client form state, or redisplayed.
+  - Password fields are cleared immediately upon form submission.
+- **Credential Communication & Assessment Limitations**:
+  - Staff self-service password change is not implemented in this assessment. Initial passwords do not expire automatically or self-destruct.
+  - Administrators must manually communicate initial credentials through an appropriate, secure private channel.
+
+### 3. Deactivation & Reservation Retention Policy
+- **Immediate Access Revocation**:
+  - Deactivation sets `isActive = false` in the database.
+  - Existing session tokens immediately lose access on their very next request via real-time database verification in `getCurrentUser()`.
+- **Preservation of Reservations & History**:
+  - Deactivation does **NOT** silently cancel, alter, or delete any reservations.
+  - All historical, in-progress, and future confirmed reservations remain intact, tied to the staff member's `userId`.
+- **Confirmation Modal & Booking Awareness**:
+  - The deactivation workflow requires explicit confirmation via an accessible modal.
+  - The modal displays the exact count of upcoming and ongoing confirmed reservations owned by the staff member.
+  - It clearly informs the administrator that these reservations remain confirmed and reserved until an administrator explicitly cancels them.
+  - A direct link is provided to `/workspace/admin/reservations?userId=[id]` to inspect and manage the member's bookings.
+
+---
+
 ## Available Scripts
 
 | Command | Description |
@@ -343,11 +390,12 @@ To prevent TOCTOU (Time-of-Check to Time-of-Use) race conditions and eliminate r
 | `npm run start` | Starts the production server |
 | `npm run lint` | Runs ESLint style and quality checks |
 | `npm run typecheck` | Validates TypeScript types across the codebase |
-| `npm test` | Runs the complete automated test suite (db constraints, auth, resources, reservations) |
+| `npm test` | Runs the complete automated test suite (db constraints, auth, resources, reservations, staff) |
 | `npm run test:db` | Runs isolated database constraint and concurrency tests |
 | `npm run test:auth` | Runs isolated authentication, JWT, and authorization tests |
 | `npm run test:resources` | Runs isolated resource and category management tests |
 | `npm run test:reservations` | Runs isolated reservation lifecycle, timezone, and concurrency tests |
+| `npm run test:staff` | Runs isolated staff-account management and security tests |
 | `npm run create-admin` | CLI command to safely create the initial administrator |
 | `npm run prisma:generate` | Generates the Prisma 7 client |
 | `npm run prisma:migrate` | Deploys versioned migrations (`prisma migrate deploy`) |
@@ -356,50 +404,81 @@ To prevent TOCTOU (Time-of-Check to Time-of-Use) race conditions and eliminate r
 
 ## Manual Verification & Demo Checklist
 
-Follow this checklist to test the complete booking and cancellation flow:
+Follow this checklist to test the complete booking, cancellation, and staff management flows:
 
-1. **Start the Application**:
-   ```bash
-   npm run dev
-   ```
-   Open `http://localhost:3000` in your browser.
+### A. Staff Account Management (Admin)
+1. **Access Staff Console**:
+   - Log in as an Administrator (`admin@reserve.local`).
+   - Click **Staff** in the navigation header or go to `/workspace/admin/staff`.
+   - Verify page displays title, search bar, status tabs, and the **Add Staff Member** button.
 
-2. **Sign In as Staff**:
-   - Log in with staff credentials.
-   - Observe the navigation bar includes **Browse Resources** and **My Reservations**.
+2. **Create a Staff Account**:
+   - Click **Add Staff Member**.
+   - Fill in: Full Name (`Jane Doe`), Email (`jane@reserve.local`), Password (`StaffPass123!`), Confirm Password (`StaffPass123!`).
+   - Click **Create Staff Account**.
+   - Verify success notification appears and password fields are cleared.
+   - Verify Jane Doe appears in the staff table with **STAFF** role and **Active** status badge.
 
-3. **Check Live Availability in Browse Resources**:
+3. **Verify Staff Login**:
+   - Sign out and log in with `jane@reserve.local` and `StaffPass123!`.
+   - Verify login succeeds and redirects to `/workspace`.
+
+4. **Edit Staff Display Name**:
+   - Sign back in as Administrator.
+   - In `/workspace/admin/staff`, click **Edit Name** on Jane Doe.
+   - Notice the email address is displayed as non-editable text.
+   - Change name to `Jane Smith` and save.
+   - Verify the table updates to display `Jane Smith`.
+
+5. **Inspect Deactivation Confirmation Modal**:
+   - Click **Deactivate** next to Jane Smith.
+   - Notice the confirmation modal opens, detailing access revocation and showing their active reservation count with a link to `/workspace/admin/reservations?userId=...`.
+   - Click **Yes, Deactivate Account**.
+   - Verify the status badge updates to **Inactive**.
+
+6. **Verify Deactivation Enforcement**:
+   - Attempt to log in with `jane@reserve.local` and `StaffPass123!`.
+   - Verify login is rejected with generic error: *"Invalid email or password."*
+
+7. **Reactivate Staff Account**:
+   - In Admin Staff Management, filter by **Inactive**.
+   - Click **Activate** on Jane Smith.
+   - Verify status badge returns to **Active**.
+   - Log in as Jane Smith; verify access is fully restored.
+
+### B. Resource Browsing, Reservations, and Conflict Prevention
+1. **Live Availability in Browse Resources**:
    - Navigate to `/workspace/resources`.
    - Select a future date and time window (e.g. tomorrow 10:00 AM to 12:00 PM).
    - Click **Apply & Check Availability**.
    - Notice each resource card updates with live availability badges ("Available" or "Reserved for selected time").
    - Click **Reserve** on an available resource card.
 
-4. **Complete a Reservation**:
+2. **Complete a Reservation**:
    - On `/workspace/resources/[id]`, review resource specifications.
    - Verify start and end times default to your selected window (labeled as Asia/Colombo Sri Lanka time).
    - Enter a purpose (e.g., "Engineering Quarterly Review").
    - Click **Confirm & Reserve Resource**.
    - Observe the green confirmation banner detailing the saved reservation and Colombo timestamps.
 
-5. **Verify Conflict Prevention**:
+3. **Verify Conflict Prevention**:
    - Attempt to book the exact same resource for an overlapping time (e.g. tomorrow 11:00 AM to 01:00 PM).
    - Submit the booking.
    - Observe the conflict banner: *"This resource is already reserved for your selected time. Please choose another time or resource."* Notice form inputs are preserved.
 
-6. **Inspect My Reservations**:
+4. **Inspect My Reservations**:
    - Navigate to `/workspace/reservations`.
    - Verify your new reservation appears with the **Upcoming** badge, Sri Lanka times, and purpose.
    - Test the filter tabs (**Upcoming**, **In Progress**, **Finished**, **Cancelled**).
 
-7. **Cancel a Reservation**:
+5. **Cancel a Reservation**:
    - Click on the reservation card to open `/workspace/reservations/[id]`.
    - Click **Cancel Reservation**.
    - Provide an optional cancellation note and confirm.
    - Observe status updates immediately to **Cancelled**, showing cancellation metadata.
    - Re-check availability for that time window on `/workspace/resources` — verify the slot is immediately released!
 
-8. **Admin Cancellation Oversight**:
+6. **Admin Cancellation Oversight**:
    - Sign out and log in as an **Administrator**.
    - Navigate to `/workspace/admin/reservations` (**All Reservations**).
    - Observe all organizational bookings with employee names, email addresses, and status badges.
