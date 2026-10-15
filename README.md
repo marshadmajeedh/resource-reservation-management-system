@@ -181,7 +181,7 @@ The production system implements a strict four-entity relational schema with zer
 ## Demo Video
 
 <!-- Place demonstration video link below for assessment submission -->
-[Demo Video: Insert assessment demo video link here]
+[Demo Video: https://youtu.be/xnkcGNWUjJc]
 
 ---
 
