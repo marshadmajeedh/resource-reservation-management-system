@@ -16,11 +16,13 @@ export function WorkspaceNav({ user }: WorkspaceNavProps) {
   const navLinks = [
     { href: "/workspace", label: "Overview", exact: true },
     { href: "/workspace/resources", label: "Browse Resources", exact: false },
+    { href: "/workspace/reservations", label: "My Reservations", exact: false },
   ];
 
   const adminLinks = [
     { href: "/workspace/admin/resources", label: "Manage Resources", exact: false },
     { href: "/workspace/admin/categories", label: "Categories", exact: false },
+    { href: "/workspace/admin/reservations", label: "All Reservations", exact: false },
   ];
 
   const isLinkActive = (href: string, exact: boolean) => {

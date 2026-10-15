@@ -42,7 +42,14 @@ export default async function WorkspacePage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <Link
+              id="my-reservations-link"
+              href="/workspace/reservations"
+              className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700"
+            >
+              My Reservations
+            </Link>
             <Link
               id="browse-resources-link"
               href="/workspace/resources"
@@ -63,7 +70,7 @@ export default async function WorkspacePage() {
         </div>
 
         {/* Feature Navigation Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Link
             href="/workspace/resources"
             className="group p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:border-emerald-500/50 hover:shadow-md transition-all flex flex-col justify-between"
@@ -87,27 +94,49 @@ export default async function WorkspacePage() {
             </div>
           </Link>
 
+          <Link
+            href="/workspace/reservations"
+            className="group p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:border-teal-500/50 hover:shadow-md transition-all flex flex-col justify-between"
+          >
+            <div>
+              <div className="h-10 w-10 rounded-2xl bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 flex items-center justify-center mb-4">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-teal-600 transition-colors">
+                My Reservations
+              </h2>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                View your active, upcoming, in-progress, and past resource bookings. Review booking details and cancel reservations if needed.
+              </p>
+            </div>
+            <div className="mt-6 flex items-center gap-1 text-xs font-semibold text-teal-600 dark:text-teal-400">
+              <span>View my bookings</span>
+              <span>→</span>
+            </div>
+          </Link>
+
           {isAdmin ? (
             <Link
-              href="/workspace/admin/resources"
+              href="/workspace/admin/reservations"
               className="group p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:border-purple-500/50 hover:shadow-md transition-all flex flex-col justify-between"
             >
               <div>
                 <div className="h-10 w-10 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-4">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                   </svg>
                 </div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-purple-600 transition-colors">
-                  Administrative Management
+                  All Reservations
                 </h2>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  Configure facilities, manage categories, edit resource capacities, and control activation or deactivation states.
+                  Administrative overview of all organizational reservations across resources, staff members, and time intervals.
                 </p>
               </div>
               <div className="mt-6 flex items-center gap-1 text-xs font-semibold text-purple-600 dark:text-purple-400">
-                <span>Manage resources</span>
+                <span>View all reservations</span>
                 <span>→</span>
               </div>
             </Link>
@@ -121,7 +150,7 @@ export default async function WorkspacePage() {
                   Standard Access
                 </h2>
                 <p className="mt-1 text-xs text-slate-500 leading-relaxed">
-                  As a staff member, you have access to browse active office resources and facility specifications across your organization.
+                  As a staff member, you can book any active office resource for yourself, check live availability, and manage your reservations.
                 </p>
               </div>
               <p className="mt-4 text-[11px] text-slate-400">
