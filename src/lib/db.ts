@@ -21,8 +21,25 @@ import { PrismaClient } from "@/generated/prisma/client";
  * at module import time. Network connections are opened lazily on the first query.
  */
 
+function resolveConnectionString(): string | undefined {
+  if (process.env.DATABASE_URL && process.env.DATABASE_URL.trim() !== "") {
+    return process.env.DATABASE_URL;
+  }
+  if (process.env.POSTGRES_USER && process.env.POSTGRES_PASSWORD && process.env.POSTGRES_DB) {
+    const u = encodeURIComponent(process.env.POSTGRES_USER);
+    const p = encodeURIComponent(process.env.POSTGRES_PASSWORD);
+    const h = process.env.POSTGRES_HOST || "db";
+    const port = process.env.POSTGRES_PORT || "5432";
+    const d = encodeURIComponent(process.env.POSTGRES_DB);
+    const url = `postgresql://${u}:${p}@${h}:${port}/${d}?sslmode=disable`;
+    process.env.DATABASE_URL = url;
+    return url;
+  }
+  return undefined;
+}
+
 export function isDatabaseConfigured(): boolean {
-  const url = process.env.DATABASE_URL;
+  const url = resolveConnectionString();
   return Boolean(
     url &&
       url !== "postgresql://user:password@host:port/database?sslmode=require"
@@ -36,7 +53,7 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 export function getDatabaseClient(): PrismaClient {
-  const connectionString = process.env.DATABASE_URL;
+  const connectionString = resolveConnectionString();
 
   if (
     globalForPrisma.prisma &&
@@ -55,15 +72,17 @@ export function getDatabaseClient(): PrismaClient {
     globalForPrisma.prisma = undefined;
   }
 
-  const isLocal =
+  const disableSsl =
     connectionString?.includes("localhost") ||
-    connectionString?.includes("127.0.0.1");
+    connectionString?.includes("127.0.0.1") ||
+    connectionString?.includes("sslmode=disable") ||
+    process.env.DATABASE_SSL === "false";
 
   const pool =
     globalForPrisma.pgPool ??
     new Pool({
       connectionString,
-      ssl: isLocal || !connectionString ? false : { rejectUnauthorized: false },
+      ssl: disableSsl || !connectionString ? false : { rejectUnauthorized: false },
     });
 
   globalForPrisma.pgPool = pool;

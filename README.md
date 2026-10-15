@@ -20,7 +20,8 @@ A production-grade, internal office Resource Reservation Management System built
   - [Resource Deactivation Policy](#4-resource-deactivation-policy)
   - [Staff Deactivation Policy](#5-staff-deactivation-policy)
 - [Known Architectural Limitations & Honest Disclosures](#known-architectural-limitations--honest-disclosures)
-- [Getting Started](#getting-started)
+- [Docker Quick Start (Local Production Evaluation)](#docker-quick-start-local-production-evaluation)
+- [Getting Started (Native Node + Supabase Setup)](#getting-started-native-node--supabase-setup)
   - [Prerequisites](#prerequisites)
   - [1. Installation](#1-installation)
   - [2. Environment Configuration](#2-environment-configuration)
@@ -296,7 +297,153 @@ To prevent race conditions between resource deactivation and reservation creatio
 
 ---
 
-## Getting Started
+## Docker Quick Start (Local Production Evaluation)
+
+Reviewers can clone the repository, configure local environment variables, and run the Next.js application and PostgreSQL in an isolated Docker container stack using Docker Compose.
+
+### Docker Prerequisites
+- **Docker Engine** (or **Docker Desktop**) with Docker Compose v2.20+ installed and running.
+- Port `3000` available on localhost (or customize `APP_PORT` in `.env.docker`).
+
+---
+
+### Step 1: Environment File Setup
+Copy the tracked Docker environment example to create your local `.env.docker`:
+
+```bash
+cp .env.docker.example .env.docker
+```
+
+> **Security & Isolation Architecture**:
+> - `.env.docker` is gitignored and kept strictly separate from the host `.env` file (which is used for native Node + Supabase workflows).
+> - Docker Compose explicitly reads `.env.docker`. This ensures an existing Supabase `DATABASE_URL` in `.env` is never inadvertently used by container migrations.
+> - Passwords containing special characters (e.g. `@`, `:`, `#`, `%`, `/`) are automatically URL-encoded by the container entrypoint when constructing the PostgreSQL connection URI.
+
+---
+
+### Step 2: Generate a JWT Secret Key
+Generate a secure 32+ character secret for `JWT_SECRET` in `.env.docker`:
+
+**Using OpenSSL (Host):**
+```bash
+openssl rand -base64 32
+```
+
+**Without Host Dependencies (Using Docker):**
+```bash
+docker run --rm node:24-bookworm-slim node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+Paste the generated string into `JWT_SECRET` inside `.env.docker`.
+
+---
+
+### Step 3: Build & Start Services
+Build the images and start the PostgreSQL database, migration runner, and Next.js web application:
+
+```bash
+docker compose --env-file .env.docker up --build -d
+```
+
+#### Startup & Service Sequencing:
+1. **`db`** (`postgres:17-alpine`): Initializes PostgreSQL 17 on the internal Docker network with persistent storage (`rrs_pgdata` volume) and runs health checks via `pg_isready`.
+2. **`migrate`** (`node:24-bookworm-slim`): Waits for `db` to become healthy, runs `npx prisma migrate deploy` to apply tracked schema migrations, and exits with code 0 on success.
+3. **`app`** (`node:24-bookworm-slim`): Starts only after migrations complete successfully (`service_completed_successfully`). Serves the production Next.js build on `0.0.0.0:3000` bound to host loopback `127.0.0.1:3000`.
+
+---
+
+### Step 4: Create the Initial Administrator
+Run the interactive administrator setup CLI inside the running application container:
+
+```bash
+docker compose --env-file .env.docker exec -it app npm run create-admin
+```
+
+*(Alternatively, if running one-off before starting the app service:*
+`docker compose --env-file .env.docker run --rm -it app npm run create-admin`*)*
+
+**Interactive Prompts:**
+- **Administrator Name**: e.g., `System Admin`
+- **Administrator Email**: e.g., `admin@reserve.local`
+- **Administrator Password**: Masked input with `*` (minimum 8 characters, Argon2id hashed)
+
+---
+
+### Step 5: Access the Web Application
+Open your browser and navigate to:
+**[http://localhost:3000](http://localhost:3000)** (or `http://127.0.0.1:3000`)
+
+1. Log in with your administrator credentials.
+2. Navigate to the Admin Workspace to create Resource Categories, Physical Resources, and Staff Accounts.
+3. Log out and log in with a Staff account to verify booking and reservation lifecycles.
+
+> **Local HTTP Cookie Limitation & Security Notice**:
+> - Setting `COOKIE_SECURE=false` in `.env.docker` explicitly disables Secure cookies to permit local evaluation over unencrypted HTTP (`http://localhost:3000`).
+> - The documented Compose setup is restricted by its host loopback binding (`127.0.0.1:${APP_PORT:-3000}:3000`), mitigating exposure over external network interfaces during local review.
+> - Deployed production environments served over HTTPS/TLS must retain Secure cookies (`Secure=true`) by setting `COOKIE_SECURE=true` or omitting the variable entirely.
+> - Cookie defense-in-depth flags (`HttpOnly=true`, `SameSite=lax`, `Path=/`, and Server Action origin validation) provide layered mitigation, but `HttpOnly` and `SameSite` alone do not eliminate all classes of XSS or CSRF threats without end-to-end transport encryption (HTTPS) in production.
+
+---
+
+### Step 6: Viewing Logs
+Inspect real-time logs from all or individual services:
+
+```bash
+# View combined logs from all services:
+docker compose --env-file .env.docker logs -f
+
+# View logs from a specific service:
+docker compose --env-file .env.docker logs -f app
+docker compose --env-file .env.docker logs -f migrate
+docker compose --env-file .env.docker logs -f db
+```
+
+---
+
+### Step 7: Stopping & Restarting Services
+To gracefully stop the containers without losing data:
+
+```bash
+docker compose --env-file .env.docker down
+```
+
+To restart the application:
+```bash
+docker compose --env-file .env.docker up -d
+```
+
+---
+
+### Data Persistence & Safe Operations
+- All database state (users, categories, resources, reservations, and audit logs) is stored in the named Docker volume `rrs_pgdata`.
+- Normal `docker compose down` and container restarts preserve all data.
+- **Destructive Warning**: Running `docker compose down -v` permanently removes the named volume and erases all database records. Never use `-v` unless you intentionally want a clean slate wipe.
+
+---
+
+### Troubleshooting
+
+#### Port 3000 Conflict
+If port 3000 is already in use by another service on your machine:
+1. Open `.env.docker` and change `APP_PORT`:
+   ```env
+   APP_PORT=3001
+   ```
+2. Restart Compose:
+   ```bash
+   docker compose --env-file .env.docker up -d
+   ```
+3. Access the application at [http://localhost:3001](http://localhost:3001).
+
+#### Migration Service Exits Nonzero
+If the `migrate` service fails:
+1. Check the logs: `docker compose --env-file .env.docker logs migrate`
+2. Verify that `POSTGRES_USER` and `POSTGRES_PASSWORD` in `.env.docker` match the database credentials.
+3. Verify that the database is healthy: `docker compose --env-file .env.docker ps`
+
+---
+
+## Getting Started (Native Node + Supabase Setup)
 
 ### Prerequisites
 

@@ -1,0 +1,43 @@
+# Version control
+.git
+.gitignore
+
+# Dependencies and package manager artifacts
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Next.js build output
+.next
+out
+build
+
+# Environment files and credentials (strictly prevent baking secrets into image layers)
+.env
+.env.*
+.env.local
+.env.development
+.env.test
+.env.production
+.env.docker
+
+# Test suites and coverage
+tests
+coverage
+
+# IDE, OS, and agent directories
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+*.tsbuildinfo
+.agents
+.gemini
+
+# Docker Compose files (not needed inside application image)
+compose*.yaml
+compose*.yml
+docker-compose*.yaml
+docker-compose*.yml
