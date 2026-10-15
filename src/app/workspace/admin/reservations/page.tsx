@@ -19,6 +19,7 @@ interface AdminReservationsPageProps {
   searchParams: Promise<{
     status?: string;
     page?: string;
+    userId?: string;
   }>;
 }
 
@@ -41,12 +42,14 @@ export default async function AdminReservationsPage({
     : "all";
 
   const currentPage = Math.max(1, Number(sp.page) || 1);
+  const userFilter = typeof sp.userId === "string" && sp.userId.trim() !== "" ? sp.userId.trim() : undefined;
 
   const data = await listAllReservations(
     {
       statusFilter: currentFilter,
       page: currentPage,
       pageSize: 15,
+      userId: userFilter,
     },
     admin
   );
@@ -54,6 +57,7 @@ export default async function AdminReservationsPage({
   const buildFilterUrl = (filter: ReservationStatusFilter) => {
     const params = new URLSearchParams();
     if (filter !== "all") params.set("status", filter);
+    if (userFilter) params.set("userId", userFilter);
     const qs = params.toString();
     return `/workspace/admin/reservations${qs ? `?${qs}` : ""}`;
   };
@@ -61,6 +65,7 @@ export default async function AdminReservationsPage({
   const buildPageUrl = (newPage: number) => {
     const params = new URLSearchParams();
     if (currentFilter !== "all") params.set("status", currentFilter);
+    if (userFilter) params.set("userId", userFilter);
     if (newPage > 1) params.set("page", String(newPage));
     const qs = params.toString();
     return `/workspace/admin/reservations${qs ? `?${qs}` : ""}`;
@@ -129,6 +134,21 @@ export default async function AdminReservationsPage({
             );
           })}
         </div>
+
+        {userFilter && (
+          <div className="p-4 rounded-2xl bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-purple-900 dark:text-purple-200">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-purple-500" />
+              <span>Filtering reservations owned by member ID: <code className="font-mono font-semibold">{userFilter}</code></span>
+            </div>
+            <Link
+              href="/workspace/admin/reservations"
+              className="px-3 py-1 rounded-lg bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-800 font-semibold hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors text-center"
+            >
+              Clear Member Filter
+            </Link>
+          </div>
+        )}
 
         {/* Reservations Table / Cards */}
         {data.items.length === 0 ? (

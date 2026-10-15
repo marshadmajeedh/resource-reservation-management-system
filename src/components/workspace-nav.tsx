@@ -23,6 +23,7 @@ export function WorkspaceNav({ user }: WorkspaceNavProps) {
     { href: "/workspace/admin/resources", label: "Manage Resources", exact: false },
     { href: "/workspace/admin/categories", label: "Categories", exact: false },
     { href: "/workspace/admin/reservations", label: "All Reservations", exact: false },
+    { href: "/workspace/admin/staff", label: "Staff", exact: false },
   ];
 
   const isLinkActive = (href: string, exact: boolean) => {
