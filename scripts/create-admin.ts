@@ -110,10 +110,20 @@ async function main() {
   console.log(" Resource Reservation System - Initial Admin Setup");
   console.log("==================================================");
 
-  const databaseUrl = process.env.DATABASE_URL;
+  let databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl || databaseUrl.trim() === "") {
-    console.error("\n[ERROR] DATABASE_URL is not set in environment or .env file.\n");
-    process.exit(1);
+    if (process.env.POSTGRES_USER && process.env.POSTGRES_PASSWORD && process.env.POSTGRES_DB) {
+      const u = encodeURIComponent(process.env.POSTGRES_USER);
+      const p = encodeURIComponent(process.env.POSTGRES_PASSWORD);
+      const h = process.env.POSTGRES_HOST || "db";
+      const port = process.env.POSTGRES_PORT || "5432";
+      const d = encodeURIComponent(process.env.POSTGRES_DB);
+      databaseUrl = `postgresql://${u}:${p}@${h}:${port}/${d}?sslmode=disable`;
+      process.env.DATABASE_URL = databaseUrl;
+    } else {
+      console.error("\n[ERROR] DATABASE_URL is not set in environment or .env file.\n");
+      process.exit(1);
+    }
   }
 
   let adminName = process.env.ADMIN_NAME?.trim() || "";
@@ -167,7 +177,10 @@ async function main() {
   const client = new Client({
     connectionString: databaseUrl,
     ssl:
-      databaseUrl.includes("localhost") || databaseUrl.includes("127.0.0.1")
+      databaseUrl.includes("localhost") ||
+      databaseUrl.includes("127.0.0.1") ||
+      databaseUrl.includes("sslmode=disable") ||
+      process.env.DATABASE_SSL === "false"
         ? false
         : { rejectUnauthorized: false },
   });

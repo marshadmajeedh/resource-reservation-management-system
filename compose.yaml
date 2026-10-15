@@ -1,0 +1,77 @@
+# ==============================================================================
+# Docker Compose Specification for Resource Reservation Management System
+# ==============================================================================
+# Services:
+#   1. db:      PostgreSQL 17 database with persistent storage and health check
+#   2. migrate: One-shot service running Prisma migrations (prisma migrate deploy)
+#   3. app:     Next.js production web server listening on 0.0.0.0:3000, published on 127.0.0.1:3000
+#
+# Environment Precedence & Interpolation Note:
+#   Docker Compose reads variables from .env.docker via `env_file:` and for YAML interpolation
+#   when invoking `docker compose --env-file .env.docker up`.
+#   To prevent host Supabase DATABASE_URL contamination, DATABASE_URL is not interpolated
+#   from .env; it is safely assembled inside the container entrypoint using POSTGRES_* credentials.
+# ==============================================================================
+
+name: rrs
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_DB: "${POSTGRES_DB:-reservation_db}"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-reservation_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    # The database port is kept internal to the Compose network to prevent host port collisions.
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env.docker
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+    command: ["npm", "run", "prisma:migrate"]
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      # Published strictly to loopback by default for secure local review
+      - "127.0.0.1:${APP_PORT:-3000}:3000"
+    env_file:
+      - .env.docker
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+    command: ["npm", "run", "start", "--", "-H", "0.0.0.0", "-p", "3000"]
+
+volumes:
+  pgdata:
+    name: rrs_pgdata
