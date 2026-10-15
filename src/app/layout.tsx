@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Resource Reservation Management",
-  description: "Internal office resource reservation and scheduling system with conflict-free booking.",
+  title: "Reserve - Office Resource Reservation",
+  description: "Find shared office resources, reserve a time, and manage your bookings in one place.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

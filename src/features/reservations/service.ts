@@ -64,11 +64,7 @@ export async function createReservation(
   const fieldErrors: Record<string, string> = {};
 
   if (!isValidUuid(input.resourceId)) {
-    return {
-      success: false,
-      error: "Invalid resource ID.",
-      fieldErrors: { resourceId: "A valid resource must be selected." },
-    };
+    fieldErrors.resourceId = "A valid resource must be selected.";
   }
 
   const purposeCheck = validateRequiredText(input.purpose, "Purpose", 500);

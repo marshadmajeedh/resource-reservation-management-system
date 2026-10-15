@@ -6,7 +6,7 @@ import { CategoryManager } from "./category-manager";
 export const instant = false;
 
 export const metadata = {
-  title: "Manage Categories - Reserve Resource Management",
+  title: "Manage Categories - Reserve",
   description: "Create and rename resource categories for office facilities.",
 };
 

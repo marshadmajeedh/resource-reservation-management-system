@@ -7,7 +7,7 @@ import { ResourceForm } from "../resource-form";
 export const instant = false;
 
 export const metadata = {
-  title: "New Resource - Reserve Resource Management",
+  title: "New Resource - Reserve",
   description: "Create a new bookable or manageable office facility resource.",
 };
 

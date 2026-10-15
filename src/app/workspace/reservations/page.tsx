@@ -11,8 +11,8 @@ import type { ReservationStatusFilter } from "@/features/reservations/types";
 export const instant = false;
 
 export const metadata = {
-  title: "My Reservations - Reserve Resource Management",
-  description: "View and manage your active and past resource reservations.",
+  title: "My Bookings - Reserve",
+  description: "View and manage your active, upcoming, and past office resource bookings.",
 };
 
 interface MyReservationsPageProps {
@@ -75,19 +75,19 @@ export default async function MyReservationsPage({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-              My Reservations
+              My Bookings
             </h1>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-              Manage your personal resource bookings. All times are displayed in <strong>{OFFICE_TIMEZONE_LABEL}</strong>.
+              Manage your personal resource bookings. All times are evaluated in <strong>{OFFICE_TIMEZONE_LABEL}</strong>.
             </p>
           </div>
 
           <Link
             href="/workspace/resources"
             id="book-new-resource-link"
-            className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 shadow-sm shadow-emerald-600/20 transition-all self-start sm:self-auto cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 shadow-sm shadow-emerald-600/20 transition-all self-start sm:self-auto cursor-pointer"
           >
-            + Book a Resource
+            <span>+ Book a Resource</span>
           </Link>
         </div>
 
@@ -127,12 +127,12 @@ export default async function MyReservationsPage({
               </svg>
             </div>
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
-              No reservations found
+              No bookings found
             </h3>
             <p className="text-sm text-slate-500 max-w-sm mx-auto">
               {currentFilter === "all"
-                ? "You haven't made any resource reservations yet."
-                : `You don't have any ${currentFilter.replace("_", " ")} reservations.`}
+                ? "You haven't made any resource bookings yet."
+                : `You don't have any ${currentFilter.replace("_", " ")} bookings.`}
             </p>
             <div className="pt-2">
               <Link
@@ -153,13 +153,13 @@ export default async function MyReservationsPage({
               let badgeText = "Finished";
 
               if (isCancelled) {
-                badgeStyle = "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-800";
+                badgeStyle = "bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-800";
                 badgeText = "Cancelled";
               } else if (temporal === "UPCOMING") {
-                badgeStyle = "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800";
+                badgeStyle = "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800";
                 badgeText = "Upcoming";
               } else if (temporal === "IN_PROGRESS") {
-                badgeStyle = "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800 animate-pulse";
+                badgeStyle = "bg-blue-50 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800 animate-pulse";
                 badgeText = "In Progress";
               }
 
@@ -167,7 +167,7 @@ export default async function MyReservationsPage({
                 <div
                   key={item.id}
                   id={`reservation-card-${item.id}`}
-                  className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col md:flex-row md:items-center justify-between gap-6"
+                  className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 sm:p-7 shadow-sm hover:border-emerald-500/50 hover:shadow-md transition-all flex flex-col md:flex-row md:items-center justify-between gap-6"
                 >
                   <div className="space-y-3 flex-1 min-w-0">
                     <div className="flex items-center gap-2.5 flex-wrap">
@@ -178,7 +178,7 @@ export default async function MyReservationsPage({
                         {item.resource?.category?.name ?? "Resource"}
                       </span>
                       {item.resource && !item.resource.isActive && (
-                        <span className="text-[11px] font-semibold text-amber-600 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800">
+                        <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950/60 dark:text-amber-300 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800">
                           Resource Deactivated
                         </span>
                       )}
@@ -188,7 +188,7 @@ export default async function MyReservationsPage({
                       <h2 className="text-lg font-bold text-slate-900 dark:text-white truncate">
                         <Link
                           href={`/workspace/reservations/${item.id}`}
-                          className="hover:text-emerald-600 transition-colors"
+                          className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
                         >
                           {item.resource?.name ?? "Unknown Resource"}
                         </Link>
@@ -202,7 +202,7 @@ export default async function MyReservationsPage({
                       </p>
                     </div>
 
-                    <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300">
+                    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300">
                       <p className="font-semibold text-slate-900 dark:text-white mb-0.5">
                         Purpose:
                       </p>
@@ -231,9 +231,10 @@ export default async function MyReservationsPage({
                     <Link
                       href={`/workspace/reservations/${item.id}`}
                       id={`view-reservation-${item.id}`}
-                      className="px-4 py-2 rounded-xl text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 transition-colors"
+                      className="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 transition-colors"
                     >
-                      View Details →
+                      <span>View Details</span>
+                      <span>→</span>
                     </Link>
 
                     {item.resource && (
@@ -261,12 +262,12 @@ export default async function MyReservationsPage({
               {data.page > 1 ? (
                 <Link
                   href={buildPageUrl(data.page - 1)}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 font-semibold hover:bg-slate-50 dark:hover:bg-slate-800"
+                  className="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   Previous
                 </Link>
               ) : (
-                <span className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-300 dark:text-slate-700 cursor-not-allowed">
+                <span className="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-300 dark:text-slate-700 cursor-not-allowed">
                   Previous
                 </span>
               )}
@@ -274,12 +275,12 @@ export default async function MyReservationsPage({
               {data.page < data.totalPages ? (
                 <Link
                   href={buildPageUrl(data.page + 1)}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 font-semibold hover:bg-slate-50 dark:hover:bg-slate-800"
+                  className="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   Next
                 </Link>
               ) : (
-                <span className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-300 dark:text-slate-700 cursor-not-allowed">
+                <span className="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-300 dark:text-slate-700 cursor-not-allowed">
                   Next
                 </span>
               )}

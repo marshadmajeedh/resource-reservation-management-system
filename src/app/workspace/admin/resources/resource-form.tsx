@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -25,6 +25,17 @@ export function ResourceForm({
   initialData,
 }: ResourceFormProps) {
   const router = useRouter();
+
+  const [name, setName] = useState(initialData?.name ?? "");
+  const [categoryId, setCategoryId] = useState(initialData?.categoryId ?? "");
+  const [location, setLocation] = useState(initialData?.location ?? "");
+  const [capacity, setCapacity] = useState(
+    initialData?.capacity !== null && initialData?.capacity !== undefined
+      ? String(initialData.capacity)
+      : ""
+  );
+  const [description, setDescription] = useState(initialData?.description ?? "");
+  const [isActive, setIsActive] = useState(initialData?.isActive ?? true);
 
   const actionFn = mode === "create" ? createResourceAction : updateResourceAction;
 
@@ -84,12 +95,19 @@ export function ResourceForm({
           type="text"
           maxLength={100}
           required
-          defaultValue={initialData?.name ?? ""}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           placeholder="e.g. Executive Boardroom A, Mobile 4K Projector"
-          className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+          aria-invalid={Boolean(state?.fieldErrors?.name)}
+          aria-describedby={state?.fieldErrors?.name ? "resource-name-error" : undefined}
+          className={`w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-950 border transition-all text-slate-900 dark:text-white ${
+            state?.fieldErrors?.name
+              ? "border-red-300 dark:border-red-800 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+              : "border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+          }`}
         />
         {state?.fieldErrors?.name && (
-          <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-medium">
+          <p id="resource-name-error" role="alert" className="text-xs text-red-600 dark:text-red-400 font-medium">
             {state.fieldErrors.name}
           </p>
         )}
@@ -107,8 +125,15 @@ export function ResourceForm({
           id="resource-category"
           name="categoryId"
           required
-          defaultValue={initialData?.categoryId ?? ""}
-          className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+          value={categoryId}
+          onChange={(e) => setCategoryId(e.target.value)}
+          aria-invalid={Boolean(state?.fieldErrors?.categoryId)}
+          aria-describedby={state?.fieldErrors?.categoryId ? "resource-category-error" : undefined}
+          className={`w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-950 border transition-all text-slate-900 dark:text-white ${
+            state?.fieldErrors?.categoryId
+              ? "border-red-300 dark:border-red-800 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+              : "border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+          }`}
         >
           <option value="" disabled>
             Select a category...
@@ -120,7 +145,7 @@ export function ResourceForm({
           ))}
         </select>
         {state?.fieldErrors?.categoryId && (
-          <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-medium">
+          <p id="resource-category-error" role="alert" className="text-xs text-red-600 dark:text-red-400 font-medium">
             {state.fieldErrors.categoryId}
           </p>
         )}
@@ -140,12 +165,19 @@ export function ResourceForm({
           type="text"
           maxLength={150}
           required
-          defaultValue={initialData?.location ?? ""}
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
           placeholder="e.g. 4th Floor - East Wing, Storage Room B"
-          className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+          aria-invalid={Boolean(state?.fieldErrors?.location)}
+          aria-describedby={state?.fieldErrors?.location ? "resource-location-error" : undefined}
+          className={`w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-950 border transition-all text-slate-900 dark:text-white ${
+            state?.fieldErrors?.location
+              ? "border-red-300 dark:border-red-800 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+              : "border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+          }`}
         />
         {state?.fieldErrors?.location && (
-          <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-medium">
+          <p id="resource-location-error" role="alert" className="text-xs text-red-600 dark:text-red-400 font-medium">
             {state.fieldErrors.location}
           </p>
         )}
@@ -166,12 +198,19 @@ export function ResourceForm({
           min={1}
           max={100000}
           step={1}
-          defaultValue={initialData?.capacity ?? ""}
+          value={capacity}
+          onChange={(e) => setCapacity(e.target.value)}
           placeholder="e.g. 10 (leave blank if not applicable)"
-          className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+          aria-invalid={Boolean(state?.fieldErrors?.capacity)}
+          aria-describedby={state?.fieldErrors?.capacity ? "resource-capacity-error" : undefined}
+          className={`w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-950 border transition-all text-slate-900 dark:text-white ${
+            state?.fieldErrors?.capacity
+              ? "border-red-300 dark:border-red-800 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+              : "border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+          }`}
         />
         {state?.fieldErrors?.capacity && (
-          <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-medium">
+          <p id="resource-capacity-error" role="alert" className="text-xs text-red-600 dark:text-red-400 font-medium">
             {state.fieldErrors.capacity}
           </p>
         )}
@@ -190,12 +229,19 @@ export function ResourceForm({
           name="description"
           rows={4}
           maxLength={2000}
-          defaultValue={initialData?.description ?? ""}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
           placeholder="Add amenities, equipment, access instructions, or usage guidelines..."
-          className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+          aria-invalid={Boolean(state?.fieldErrors?.description)}
+          aria-describedby={state?.fieldErrors?.description ? "resource-description-error" : undefined}
+          className={`w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-950 border transition-all text-slate-900 dark:text-white ${
+            state?.fieldErrors?.description
+              ? "border-red-300 dark:border-red-800 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+              : "border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+          }`}
         />
         {state?.fieldErrors?.description && (
-          <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-medium">
+          <p id="resource-description-error" role="alert" className="text-xs text-red-600 dark:text-red-400 font-medium">
             {state.fieldErrors.description}
           </p>
         )}
@@ -208,7 +254,8 @@ export function ResourceForm({
             id="resource-active-check"
             name="isActive"
             type="checkbox"
-            defaultChecked={true}
+            checked={isActive}
+            onChange={(e) => setIsActive(e.target.checked)}
             value="true"
             className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
           />

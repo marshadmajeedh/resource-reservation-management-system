@@ -390,12 +390,36 @@ describe("Resource Management & Category Administration", () => {
     const cat = await createCategory({ name: catName }, adminUser);
     fixtureCategoryIds.add(cat.category!.id);
 
-    // Category with blank name
+    // Category with empty and blank names
+    const emptyCat = await createCategory({ name: "" }, adminUser);
+    assert.equal(emptyCat.success, false);
+    assert.match(emptyCat.fieldErrors?.name || emptyCat.error!, /cannot be blank/i);
+
     const blankCat = await createCategory({ name: "   " }, adminUser);
     assert.equal(blankCat.success, false);
-    assert.match(blankCat.error!, /cannot be blank/i);
+    assert.match(blankCat.fieldErrors?.name || blankCat.error!, /cannot be blank/i);
 
-    // Resource with whitespace-only name
+    // Rename category with empty and blank names
+    const emptyRenameCat = await renameCategory({ id: cat.category!.id, name: "" }, adminUser);
+    assert.equal(emptyRenameCat.success, false);
+    assert.match(emptyRenameCat.fieldErrors?.name || emptyRenameCat.error!, /cannot be blank/i);
+
+    const blankRenameCat = await renameCategory({ id: cat.category!.id, name: "   " }, adminUser);
+    assert.equal(blankRenameCat.success, false);
+    assert.match(blankRenameCat.fieldErrors?.name || blankRenameCat.error!, /cannot be blank/i);
+
+    // Resource with empty and whitespace-only name
+    const emptyNameRes = await createResource(
+      {
+        categoryId: cat.category!.id,
+        name: "",
+        location: "Floor 1",
+      },
+      adminUser
+    );
+    assert.equal(emptyNameRes.success, false);
+    assert.match(emptyNameRes.fieldErrors?.name || emptyNameRes.error!, /cannot be blank/i);
+
     const blankNameRes = await createResource(
       {
         categoryId: cat.category!.id,
@@ -407,7 +431,18 @@ describe("Resource Management & Category Administration", () => {
     assert.equal(blankNameRes.success, false);
     assert.match(blankNameRes.fieldErrors?.name || blankNameRes.error!, /cannot be blank/i);
 
-    // Resource with whitespace-only location
+    // Resource with empty and whitespace-only location
+    const emptyLocRes = await createResource(
+      {
+        categoryId: cat.category!.id,
+        name: "Valid Name",
+        location: "",
+      },
+      adminUser
+    );
+    assert.equal(emptyLocRes.success, false);
+    assert.match(emptyLocRes.fieldErrors?.location || emptyLocRes.error!, /cannot be blank/i);
+
     const blankLocRes = await createResource(
       {
         categoryId: cat.category!.id,
@@ -418,6 +453,68 @@ describe("Resource Management & Category Administration", () => {
     );
     assert.equal(blankLocRes.success, false);
     assert.match(blankLocRes.fieldErrors?.location || blankLocRes.error!, /cannot be blank/i);
+
+    // Create a valid resource to test updateResource validations
+    const validRes = await createResource(
+      {
+        categoryId: cat.category!.id,
+        name: "Valid Resource For Update",
+        location: "Floor 2",
+      },
+      adminUser
+    );
+    assert.equal(validRes.success, true);
+    fixtureResourceIds.add(validRes.resource!.id);
+
+    // Update resource with empty and whitespace name
+    const updateEmptyName = await updateResource(
+      {
+        id: validRes.resource!.id,
+        categoryId: cat.category!.id,
+        name: "",
+        location: "Floor 2",
+      },
+      adminUser
+    );
+    assert.equal(updateEmptyName.success, false);
+    assert.match(updateEmptyName.fieldErrors?.name || updateEmptyName.error!, /cannot be blank/i);
+
+    const updateBlankName = await updateResource(
+      {
+        id: validRes.resource!.id,
+        categoryId: cat.category!.id,
+        name: "   ",
+        location: "Floor 2",
+      },
+      adminUser
+    );
+    assert.equal(updateBlankName.success, false);
+    assert.match(updateBlankName.fieldErrors?.name || updateBlankName.error!, /cannot be blank/i);
+
+    // Update resource with empty and whitespace location
+    const updateEmptyLoc = await updateResource(
+      {
+        id: validRes.resource!.id,
+        categoryId: cat.category!.id,
+        name: "Valid Resource For Update",
+        location: "",
+      },
+      adminUser
+    );
+    assert.equal(updateEmptyLoc.success, false);
+    assert.match(updateEmptyLoc.fieldErrors?.location || updateEmptyLoc.error!, /cannot be blank/i);
+
+    const updateBlankLoc = await updateResource(
+      {
+        id: validRes.resource!.id,
+        categoryId: cat.category!.id,
+        name: "Valid Resource For Update",
+        location: "   ",
+      },
+      adminUser
+    );
+    assert.equal(updateBlankLoc.success, false);
+    assert.match(updateBlankLoc.fieldErrors?.location || updateBlankLoc.error!, /cannot be blank/i);
 
     // Excessively long name (> 100 chars)
     const longName = "A".repeat(101);

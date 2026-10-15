@@ -20,7 +20,7 @@ interface ReservationDetailPageProps {
 export async function generateMetadata({ params }: ReservationDetailPageProps) {
   await params;
   return {
-    title: "Reservation Details - Reserve",
+    title: "Booking Details - Reserve",
     description: "Detailed view of reservation intervals, resource allocations, and cancellation status.",
   };
 }
@@ -70,11 +70,11 @@ export default async function ReservationDetailPage({
             href="/workspace/reservations"
             className="hover:text-slate-900 dark:hover:text-white transition-colors"
           >
-            My Reservations
+            My Bookings
           </Link>
           <span>/</span>
           <span className="text-slate-900 dark:text-white font-medium truncate">
-            {reservation.resource?.name ?? "Reservation"}
+            {reservation.resource?.name ?? "Booking"}
           </span>
         </nav>
 

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/features/auth/dal";
 import { LoginForm } from "./login-form";
@@ -9,7 +10,7 @@ interface LoginPageProps {
 export const instant = false;
 
 export const metadata = {
-  title: "Sign In - Reserve Resource Management",
+  title: "Sign In - Reserve",
   description: "Sign in to access your organization's resource reservation workspace.",
 };
 
@@ -34,7 +35,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             Sign in to Reserve
           </h1>
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Internal Office Resource Reservation & Governance
+            Find shared office resources, reserve a time, and manage your bookings in one place.
           </p>
         </div>
 
@@ -43,10 +44,15 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <LoginForm redirectTarget={redirectTarget} />
         </div>
 
-        {/* Informational Subtext */}
-        <p className="mt-8 text-center text-xs text-slate-400 dark:text-slate-500">
-          Role-governed office resource scheduling system.
-        </p>
+        {/* Informational Subtext & Home link */}
+        <div className="mt-6 text-center text-xs text-slate-400 dark:text-slate-500 space-y-2">
+          <p>Office resource reservation and scheduling system.</p>
+          <p>
+            <Link href="/" className="font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+              ← Return to homepage
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
